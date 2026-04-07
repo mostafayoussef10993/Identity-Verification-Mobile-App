@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "834985001119",
+    "project_id": "kycflutter-7cd11",
+    "storage_bucket": "kycflutter-7cd11.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:834985001119:android:7bea30f52d4165fb4322aa",
+        "android_client_info": {
+          "package_name": "com.example.kyc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_Hpd0jmjZ8wskNJywSqoVehcN9VFOvw0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
