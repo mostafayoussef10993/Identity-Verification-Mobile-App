@@ -30,16 +30,26 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # firebase
   firebase_core:
   firebase_auth:
   cloud_firestore:
-  firebase_storage:   
+  firebase_storage: 
+  # Camera and media  
   image_picker:
   camera: 
+  # OCR
   google_mlkit_text_recognition:
+  # Device info
   device_info_plus:
+  # State management
   flutter_bloc: 
+  # Networking
   dio: 
+  # Local Storage (for onboarding flag)
+  shared_preferences:
+  # Navigation
+  go_router:
    
 
   # The following adds the Cupertino Icons font to your application.
