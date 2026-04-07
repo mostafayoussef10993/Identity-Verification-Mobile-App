@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.mostafa.kycapp"
-    compileSdk = 34
+    namespace = "com.example.kyc"
+    compileSdk = 35
 
     // Stable NDK version (recommended for camera, ML, KYC SDKs)
-    ndkVersion = 27.0.12077973
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -22,9 +22,9 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.mostafa.kycapp"
+        applicationId = "com.example.kyc"
         minSdk = 23
-        targetSdk = 34
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
