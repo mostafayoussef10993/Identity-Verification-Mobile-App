@@ -16,7 +16,8 @@ class AppLogger {
   }
 
   static void error(String message, [Object? error]) {
-    if (kDebugMode)
+    if (kDebugMode) {
       debugPrint('❌ [ERROR] $message${error != null ? ' → $error' : ''}');
+    }
   }
 }
