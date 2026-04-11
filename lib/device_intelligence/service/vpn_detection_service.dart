@@ -19,7 +19,6 @@ class VpnDetectionService {
       'http://ip-api.com/json/?fields=status,message,country,countryCode,isp,query,proxy,hosting,tor';
 
   /// Checks the current network connection for suspicious activity.
-
   /// If the API call fails for any reason, it returns a safe "unknown" result
   /// instead of throwing an error (failsafe design for better UX).
   Future<NetworkSecurityModel> checkNetwork() async {
