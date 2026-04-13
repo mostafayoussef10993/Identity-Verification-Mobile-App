@@ -3,6 +3,7 @@ import 'package:kyc/onboarding/cubit/onboarding_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingCubit extends Cubit<OnboardingState> {
+  /// Key used to store the onboarding completion status in SharedPreferences.
   static const String _onboardingKey = 'onboarding_completed';
   OnboardingCubit() : super(OnboardingInitial());
   // Called on every page swipe
