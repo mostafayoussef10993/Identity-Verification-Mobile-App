@@ -3,6 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../model/user_model.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/utils/logger.dart';
+//This class is responsible for
+//Sending an OTP to the user’s phone number
+//Verifying the OTP the user enters
+//Signing in the user with Firebase
+//Saving/updating user data in Firestore
+//Signing out
+//Converting Firebase error codes into readable messages
 
 class AuthRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
