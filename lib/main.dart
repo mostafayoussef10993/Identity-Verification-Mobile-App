@@ -57,9 +57,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      // AuthCubit provided at root so ALL screens can access it
-      create: (_) => AuthCubit(repository: authRepository),
+    return MultiBlocProvider(
+      providers: [
+        // AuthCubit provided at root so ALL screens can access it
+        BlocProvider<AuthCubit>(
+          create: (_) => AuthCubit(repository: authRepository),
+        ),
+        // OnboardingCubit provided at root for onboarding screen
+        BlocProvider<OnboardingCubit>(create: (_) => OnboardingCubit()),
+      ],
       child: Builder(
         builder: (context) {
           // Listen to auth state changes to handle sign-out navigation

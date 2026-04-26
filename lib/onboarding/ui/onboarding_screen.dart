@@ -56,102 +56,99 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => OnboardingCubit(),
-      child: BlocListener<OnboardingCubit, OnboardingState>(
-        listener: (context, state) {
-          if (state is OnboardingCompleted) {
-            // Navigate to auth when onboarding is done
-            context.goNamed('auth');
-          }
-        },
-        child: Scaffold(
-          backgroundColor: AppColors.backgroundLight,
-          body: SafeArea(
-            child: Column(
-              children: [
-                // Skip button (top right)
-                Align(
-                  alignment: Alignment.topRight,
-                  child: TextButton(
-                    onPressed: () {
-                      context.read<OnboardingCubit>().completeOnboarding();
-                    },
-                    child: const Text(
-                      'Skip',
-                      style: TextStyle(color: AppColors.textSecondary),
+    return BlocListener<OnboardingCubit, OnboardingState>(
+      listener: (context, state) {
+        if (state is OnboardingCompleted) {
+          // Navigate to auth when onboarding is done
+          context.goNamed('auth');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundLight,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Skip button (top right)
+              Align(
+                alignment: Alignment.topRight,
+                child: TextButton(
+                  onPressed: () {
+                    context.read<OnboardingCubit>().completeOnboarding();
+                  },
+                  child: const Text(
+                    'Skip',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+              ),
+
+              // PageView — the 3 screens
+              // Main Content
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _pages.length,
+                  onPageChanged: (index) {
+                    setState(() => _currentPage = index);
+                    context.read<OnboardingCubit>().pageChanged(index);
+                  },
+                  itemBuilder: (context, index) {
+                    final page = _pages[index];
+                    return OnboardingPage(
+                      title: page['title'],
+                      description: page['description'],
+                      icon: page['icon'],
+                      iconColor: page['color'],
+                    );
+                  },
+                ),
+              ),
+
+              // Dot indicators
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  _pages.length,
+                  (index) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: _currentPage == index ? 24 : 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: _currentPage == index
+                          ? AppColors.primary
+                          : AppColors.divider,
+                      borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                 ),
+              ),
 
-                // PageView — the 3 screens
-                // Main Content
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _pages.length,
-                    onPageChanged: (index) {
-                      setState(() => _currentPage = index);
-                      context.read<OnboardingCubit>().pageChanged(index);
-                    },
-                    itemBuilder: (context, index) {
-                      final page = _pages[index];
-                      return OnboardingPage(
-                        title: page['title'],
-                        description: page['description'],
-                        icon: page['icon'],
-                        iconColor: page['color'],
+              const SizedBox(height: 32),
+
+              // Next / Get Started button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_currentPage < _pages.length - 1) {
+                      // Go to next page
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
                       );
-                    },
+                    } else {
+                      // Last page — complete onboarding
+                      context.read<OnboardingCubit>().completeOnboarding();
+                    }
+                  },
+                  child: Text(
+                    _currentPage < _pages.length - 1 ? 'Next' : 'Get Started',
                   ),
                 ),
-
-                // Dot indicators
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    _pages.length,
-                    (index) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: _currentPage == index ? 24 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _currentPage == index
-                            ? AppColors.primary
-                            : AppColors.divider,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Next / Get Started button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_currentPage < _pages.length - 1) {
-                        // Go to next page
-                        _pageController.nextPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      } else {
-                        // Last page — complete onboarding
-                        context.read<OnboardingCubit>().completeOnboarding();
-                      }
-                    },
-                    child: Text(
-                      _currentPage < _pages.length - 1 ? 'Next' : 'Get Started',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-              ],
-            ),
+              ),
+              const SizedBox(height: 32),
+            ],
           ),
         ),
       ),

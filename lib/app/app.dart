@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:kyc/app/router.dart';
 import 'package:kyc/core/theme/app_theme.dart';
 import 'package:kyc/device_intelligence/model/network_security_model.dart';
@@ -16,4 +16,4 @@ class MyApp extends StatelessWidget {
       routerConfig: buildRouter(networkCheck), // pass check to router
     );
   }
-}
+}*/
