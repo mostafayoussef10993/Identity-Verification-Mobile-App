@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:kyc/authentication/repository/auth_repository.dart';
+import 'package:kyc/device_intelligence/repository/device_intelligence_repository.dart';
+import 'package:kyc/onboarding/cubit/onboarding_cubit.dart';
 import '../../core/theme/app_theme.dart';
 
 /// Screen displayed when a suspicious network (VPN, Proxy, TOR, or Datacenter IP)
@@ -52,14 +56,33 @@ class VpnBlockedScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
               ElevatedButton(
-                onPressed: () {
-                  // TODO: Implement retry logic
-                  // Common options:
-                  // 1. Restart the network check
-                  // 2. Go back to initial route
-                  // 3. Restart the entire app flow
+                onPressed: () async {
+                  // Re-run the VPN check
+                  final result = await DeviceIntelligenceRepository()
+                      .runCheck();
+                  if (!result.isSuspicious && context.mounted) {
+                    final onboardingDone =
+                        await OnboardingCubit.isOnboardingDone();
+                    final isAuth = AuthRepository().currentFirebaseUser != null;
+                    if (!isAuth && !onboardingDone) {
+                      context.goNamed('onboarding');
+                    } else if (!isAuth) {
+                      context.goNamed('auth');
+                    } else {
+                      context.goNamed('home');
+                    }
+                  } else if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'VPN still detected. Please turn it off and try again.',
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 },
-                child: const Text('I\'ve turned off my VPN — Try Again'),
+                child: const Text("I've turned off my VPN — Try Again"),
               ),
             ],
           ),
