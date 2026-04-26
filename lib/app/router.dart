@@ -1,59 +1,63 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kyc/device_intelligence/model/network_security_model.dart';
-import 'package:kyc/device_intelligence/ui/vpn_blocked_screen.dart';
-//Define the app routes using GoRouter
-/// Builds and configures the main app router using GoRouter.
-/// This router intelligently decides the **initial route** based on the
-/// result of the network security check:
-/// - If suspicious network  is detected → go to `/vpn-blocked`
-/// - Otherwise → go to normal onboarding flow.
+import '../onboarding/ui/onboarding_screen.dart';
+import '../authentication/ui/phone_entry_screen.dart';
+import '../authentication/ui/otp_verification_screen.dart';
+import '../home/ui/home_screen.dart';
+import '../device_intelligence/ui/vpn_blocked_screen.dart';
 
-GoRouter buildRouter(NetworkSecurityModel networkCheck) {
+GoRouter buildRouter({
+  required bool onboardingDone,
+  required bool isAuthenticated,
+  required bool isSuspiciousNetwork,
+}) {
   return GoRouter(
-    // Dynamically set the first screen based on network security check
-    initialLocation: networkCheck.isSuspicious ? '/vpn-blocked' : '/onboarding',
+    initialLocation: _getInitialRoute(
+      onboardingDone: onboardingDone,
+      isAuthenticated: isAuthenticated,
+      isSuspiciousNetwork: isSuspiciousNetwork,
+    ),
     routes: [
       GoRoute(
-        // Blocked screen for suspicious networks
         path: '/vpn-blocked',
         name: 'vpnBlocked',
         builder: (context, state) => VpnBlockedScreen(
-          // Pass the reason from extra data or use default message
           reason: state.extra as String? ?? 'Suspicious network detected',
         ),
       ),
       GoRoute(
         path: '/onboarding',
         name: 'onboarding',
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Onboarding'),
+        builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
         path: '/auth',
         name: 'auth',
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Authentication'),
+        builder: (context, state) => const PhoneEntryScreen(),
+      ),
+      GoRoute(
+        path: '/otp',
+        name: 'otp',
+        builder: (context, state) {
+          final verificationId = state.extra as String;
+          return OtpVerificationScreen(verificationId: verificationId);
+        },
       ),
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const PlaceholderScreen(title: 'Home'),
+        builder: (context, state) => const HomeScreen(),
       ),
     ],
   );
 }
 
-//Temporary Placeholder class
-class PlaceholderScreen extends StatelessWidget {
-  final String title;
-  const PlaceholderScreen({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text('$title screen - coming soon')),
-    );
-  }
+String _getInitialRoute({
+  required bool onboardingDone,
+  required bool isAuthenticated,
+  required bool isSuspiciousNetwork,
+}) {
+  if (isSuspiciousNetwork) return '/vpn-blocked';
+  if (isAuthenticated) return '/home';
+  if (!onboardingDone) return '/onboarding';
+  return '/auth';
 }
