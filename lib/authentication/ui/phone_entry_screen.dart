@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../cubit/auth_cubit.dart';
-import 'widgets/auth_text_field.dart';
 
 class PhoneEntryScreen extends StatefulWidget {
   const PhoneEntryScreen({super.key});
@@ -26,12 +25,20 @@ class _PhoneEntryScreenState extends State<PhoneEntryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      appBar: AppBar(title: const Text('Sign In')),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('Create an account'),
+        leading: const BackButton(),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => context.goNamed('onboarding'),
+          ),
+        ],
+      ),
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is AuthOtpSent) {
-            // Navigate to OTP screen, passing verificationId
             context.goNamed('otp', extra: state.verificationId);
           }
           if (state is AuthError) {
@@ -45,79 +52,147 @@ class _PhoneEntryScreenState extends State<PhoneEntryScreen> {
         },
         builder: (context, state) {
           return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 32),
+            child: Column(
+              children: [
+                // Segmented progress bar
+                _SegmentedProgressBar(current: 1, total: 4),
 
-                    const Text(
-                      'Enter your\nphone number',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'We\'ll send you a verification code.',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-
-                    AuthTextField(
-                      controller: _phoneController,
-                      hintText: '01XXXXXXXXX',
-                      labelText: 'Phone Number',
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      prefixWidget: const Text(
-                        '+20 ',
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 16,
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your phone number';
-                        }
-                        if (value.length < 10) {
-                          return 'Please enter a valid phone number';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // Send OTP button
-                    state is AuthLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : ElevatedButton(
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                final fullNumber =
-                                    '+20${_phoneController.text.trim()}';
-                                context.read<AuthCubit>().sendOtp(fullNumber);
-                              }
-                            },
-                            child: const Text('Send Verification Code'),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "What's your\nphone number?",
+                            style: AppTextStyles.heading1,
                           ),
-                  ],
+                          const SizedBox(height: 8),
+                          Text(
+                            "We'll send you a one-time verification code.",
+                            style: AppTextStyles.body,
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Label above field
+                          const Text(
+                            'Phone number',
+                            style: AppTextStyles.label,
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(
+                              hintText: '01XXXXXXXXX',
+                              prefixIcon: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 14,
+                                ),
+                                child: const Text(
+                                  '+20',
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return 'Please enter your phone number';
+                              }
+                              if (v.length < 10) {
+                                return 'Please enter a valid phone number';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+
+                // Button pinned to bottom
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+                  child: state is AuthLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.primary,
+                          ),
+                        )
+                      : ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              context.read<AuthCubit>().sendOtp(
+                                '+20${_phoneController.text.trim()}',
+                              );
+                            }
+                          },
+                          child: const Text(
+                            'Continue',
+                            style: AppTextStyles.buttonText,
+                          ),
+                        ),
+                ),
+              ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// Segmented progress bar —
+class _SegmentedProgressBar extends StatelessWidget {
+  final int current;
+  final int total;
+  const _SegmentedProgressBar({required this.current, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Row(
+              children: List.generate(total, (i) {
+                return Expanded(
+                  child: Container(
+                    height: 4,
+                    margin: const EdgeInsets.only(right: 4),
+                    decoration: BoxDecoration(
+                      color: i < current
+                          ? AppColors.primary
+                          : AppColors.divider,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$current/$total',
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
