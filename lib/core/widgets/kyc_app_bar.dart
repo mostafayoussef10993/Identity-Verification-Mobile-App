@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 
+//Since the  AppBar pattern
+//(back arrow left + title center + X right)
+// repeats on almost every screen,
+//We make it a reusable widget now
 class KycAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final bool showBack;

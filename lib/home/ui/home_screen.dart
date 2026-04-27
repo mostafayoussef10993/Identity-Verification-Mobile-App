@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kyc/core/widgets/kyc_app_bar.dart';
 import '../../core/theme/app_theme.dart';
 import '../../authentication/cubit/auth_cubit.dart';
 
@@ -10,14 +11,10 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Your Application'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => context.read<AuthCubit>().signOut(),
-          ),
-        ],
+      appBar: KycAppBar(
+        title: 'Your Application',
+        showBack: false,
+        onClose: () => context.read<AuthCubit>().signOut(),
       ),
       body: SafeArea(
         child: Padding(

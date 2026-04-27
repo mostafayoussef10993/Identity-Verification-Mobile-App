@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kyc/core/widgets/kyc_app_bar.dart';
 import '../../core/theme/app_theme.dart';
 import '../cubit/auth_cubit.dart';
 
@@ -40,10 +41,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Sign in'),
-        automaticallyImplyLeading: false,
-      ),
+      appBar: KycAppBar(title: 'Sign in', showBack: false, showClose: false),
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
