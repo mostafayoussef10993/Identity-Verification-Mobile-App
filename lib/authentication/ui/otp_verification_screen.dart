@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kyc/core/widgets/kyc_app_bar.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/kyc_app_bar.dart';
 import '../cubit/auth_cubit.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
@@ -41,7 +41,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: KycAppBar(title: 'Sign in', showBack: false, showClose: false),
+      appBar: const KycAppBar(
+        title: 'Sign in',
+        showBack: false,
+        showClose: false,
+      ),
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
@@ -58,60 +62,103 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           }
         },
         builder: (context, state) {
+          final isLoading = state is AuthLoading;
+
           return SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 60),
+                const SizedBox(height: 48),
 
-                // Title
-                Text(
-                  state is AuthLoading ? 'Verifying...' : 'Enter the code',
-                  style: AppTextStyles.heading2,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Enter the 6-digit code sent to your phone.',
-                  style: AppTextStyles.body,
-                  textAlign: TextAlign.center,
+                // Title & subtitle
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Enter the code',
+                        style: AppTextStyles.heading1,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Enter the 6-digit code sent to your phone.',
+                        style: AppTextStyles.body,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 40),
 
-                // 6 dot indicators
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(_codeLength, (i) {
-                    final filled = i < _code.length;
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: filled ? AppColors.primary : Colors.transparent,
-                        border: Border.all(
-                          color: filled ? AppColors.primary : AppColors.divider,
-                          width: 1.5,
+                // 6 individual square boxes showing digits
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(_codeLength, (i) {
+                      final hasDigit = i < _code.length;
+                      final isActive = i == _code.length; // current box
+
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: 46,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: hasDigit
+                              ? AppColors.primary.withOpacity(0.05)
+                              : AppColors.surfaceGrey,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isActive
+                                ? AppColors
+                                      .primary // active = dark green border
+                                : hasDigit
+                                ? AppColors
+                                      .primary // filled = dark green border
+                                : AppColors.divider, // empty = grey border
+                            width: isActive || hasDigit ? 2 : 1.5,
+                          ),
                         ),
-                      ),
-                    );
-                  }),
+                        alignment: Alignment.center,
+                        child: hasDigit
+                            ? Text(
+                                _code[i], // visible digit
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              )
+                            : isActive
+                            ? Container(
+                                // blinking cursor bar
+                                width: 1.5,
+                                height: 24,
+                                color: AppColors.primary,
+                              )
+                            : null,
+                      );
+                    }),
+                  ),
                 ),
 
                 const Spacer(),
 
-                if (state is AuthLoading)
-                  const CircularProgressIndicator(color: AppColors.primary)
+                // Loading or numpad
+                if (isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 48),
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  )
                 else
-                  // Custom numpad
                   _buildNumpad(),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
 
-                // Resend option
+                // Resend
                 TextButton(
-                  onPressed: () => context.pop(),
+                  onPressed: isLoading ? null : () => context.pop(),
                   child: const Text(
                     'Resend code',
                     style: TextStyle(
@@ -121,7 +168,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
               ],
             ),
           );
@@ -131,7 +178,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   }
 
   Widget _buildNumpad() {
-    const keys = [
+    const rows = [
       ['1', '2', '3'],
       ['4', '5', '6'],
       ['7', '8', '9'],
@@ -139,18 +186,26 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     ];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
-        children: keys.map((row) {
+        children: rows.map((row) {
           return Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: row.map((key) {
-              if (key.isEmpty) return const SizedBox(width: 80, height: 64);
+              if (key.isEmpty) {
+                return const SizedBox(width: 80, height: 64);
+              }
 
               return SizedBox(
                 width: 80,
                 height: 64,
                 child: TextButton(
+                  style: TextButton.styleFrom(
+                    overlayColor: AppColors.primary.withOpacity(0.08),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   onPressed: key == 'del' ? _onDelete : () => _onKeyTap(key),
                   child: key == 'del'
                       ? const Icon(
