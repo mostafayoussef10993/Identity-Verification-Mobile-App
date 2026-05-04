@@ -27,6 +27,7 @@ class OnboardingPage extends StatelessWidget {
             width: 140,
             height: 140,
             decoration: BoxDecoration(
+              // ignore: deprecated_member_use
               color: iconColor.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
