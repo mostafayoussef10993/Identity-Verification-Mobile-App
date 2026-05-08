@@ -50,6 +50,7 @@ dependencies:
   shared_preferences:
   # Navigation
   go_router:
+  cloudinary_sdk: 
    
 
   # The following adds the Cupertino Icons font to your application.

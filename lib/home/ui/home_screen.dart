@@ -97,9 +97,7 @@ class HomeScreen extends StatelessWidget {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(24.0),
         child: ElevatedButton(
-          onPressed: () {
-            // TODO: Sprint 2 — navigate to document scan
-          },
+          onPressed: () => context.goNamed('applicantType'),
           child: const Text('Continue', style: AppTextStyles.buttonText),
         ),
       ),
