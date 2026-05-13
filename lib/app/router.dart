@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kyc/applicant_classification/ui/applicant_type_screen.dart';
 import 'package:kyc/document_upload/ui/id_upload_screen.dart';
 import 'package:kyc/document_upload/ui/readiness_confirmation_screen.dart';
+import 'package:kyc/document_verification/cubit/document_verification_cubit.dart';
+import 'package:kyc/document_verification/model/verification_result_model.dart';
+import 'package:kyc/document_verification/ui/document_scan_screen.dart';
+import 'package:kyc/document_verification/ui/verification_result_screen.dart';
 import 'package:kyc/kyc_application/model/kyc_application_model.dart';
 import '../onboarding/ui/onboarding_screen.dart';
 import '../authentication/ui/phone_entry_screen.dart';
@@ -81,6 +86,25 @@ GoRouter buildRouter({
             ),
           ),
         ),
+      ),
+      GoRoute(
+        path: '/document-scan',
+        name: 'documentScan',
+        builder: (context, state) {
+          final application = state.extra as KycApplicationModel;
+          return BlocProvider(
+            create: (_) => DocumentVerificationCubit(),
+            child: DocumentScanScreen(application: application),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/verification-result',
+        name: 'verificationResult',
+        builder: (context, state) {
+          final result = state.extra as VerificationResultModel;
+          return VerificationResultScreen(result: result);
+        },
       ),
     ],
   );
