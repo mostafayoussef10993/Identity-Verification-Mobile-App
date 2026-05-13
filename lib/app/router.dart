@@ -1,4 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kyc/applicant_classification/ui/applicant_type_screen.dart';
+import 'package:kyc/document_upload/ui/id_upload_screen.dart';
+import 'package:kyc/document_upload/ui/readiness_confirmation_screen.dart';
+import 'package:kyc/kyc_application/model/kyc_application_model.dart';
 import '../onboarding/ui/onboarding_screen.dart';
 import '../authentication/ui/phone_entry_screen.dart';
 import '../authentication/ui/otp_verification_screen.dart';
@@ -46,6 +51,36 @@ GoRouter buildRouter({
         path: '/home',
         name: 'home',
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/applicant-type',
+        name: 'applicantType',
+        builder: (context, state) => const ApplicantTypeScreen(),
+      ),
+      GoRoute(
+        path: '/id-upload',
+        name: 'idUpload',
+        builder: (context, state) {
+          final application = state.extra as KycApplicationModel;
+          return IdUploadScreen(application: application);
+        },
+      ),
+      GoRoute(
+        path: '/readiness',
+        name: 'readiness',
+        builder: (context, state) => const ReadinessConfirmationScreen(),
+      ),
+      GoRoute(
+        path: '/document-scan', // placeholder for Sprint 3
+        name: 'documentScan',
+        builder: (context, state) => const Scaffold(
+          body: Center(
+            child: Text(
+              'Document Scan — Sprint 3',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
     ],
   );

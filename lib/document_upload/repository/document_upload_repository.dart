@@ -8,11 +8,13 @@ class DocumentUploadRepository {
     required File image,
     required String folder,
     required String publicId,
+    Function(double)? onProgress,
   }) async {
     return await _cloudinary.uploadImage(
       imageFile: image,
       folder: folder,
       publicId: publicId,
+      onProgress: onProgress,
     );
   }
 }

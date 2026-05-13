@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kyc/kyc_application/cubit/kyc_application_cubit.dart';
 import 'authentication/cubit/auth_cubit.dart';
 import 'authentication/repository/auth_repository.dart';
 import 'device_intelligence/repository/device_intelligence_repository.dart';
@@ -65,6 +66,10 @@ class MyApp extends StatelessWidget {
         ),
         // OnboardingCubit provided at root for onboarding screen
         BlocProvider<OnboardingCubit>(create: (_) => OnboardingCubit()),
+        BlocProvider<KycApplicationCubit>(
+          // ← ADD THIS
+          create: (_) => KycApplicationCubit(),
+        ),
       ],
       child: Builder(
         builder: (context) {

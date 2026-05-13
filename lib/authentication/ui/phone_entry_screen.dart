@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kyc/core/widgets/kyc_app_bar.dart';
+import 'package:kyc/core/widgets/segmented_progress_bar.dart';
 import '../../core/theme/app_theme.dart';
 import '../cubit/auth_cubit.dart';
 
@@ -47,7 +48,7 @@ class _PhoneEntryScreenState extends State<PhoneEntryScreen> {
             child: Column(
               children: [
                 // Segmented progress bar
-                _SegmentedProgressBar(current: 1, total: 4),
+                const SegmentedProgressBar(current: 1, total: 4),
 
                 Expanded(
                   child: Padding(
@@ -140,51 +141,6 @@ class _PhoneEntryScreenState extends State<PhoneEntryScreen> {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-// Segmented progress bar —
-class _SegmentedProgressBar extends StatelessWidget {
-  final int current;
-  final int total;
-  const _SegmentedProgressBar({required this.current, required this.total});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              children: List.generate(total, (i) {
-                return Expanded(
-                  child: Container(
-                    height: 4,
-                    margin: const EdgeInsets.only(right: 4),
-                    decoration: BoxDecoration(
-                      color: i < current
-                          ? AppColors.primary
-                          : AppColors.divider,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$current/$total',
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }

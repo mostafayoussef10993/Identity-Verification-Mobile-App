@@ -38,6 +38,7 @@ dependencies:
   # Camera and media  
   image_picker:
   camera: 
+  image:
   # OCR
   google_mlkit_text_recognition:
   # Device info
@@ -52,6 +53,9 @@ dependencies:
   go_router:
   cloudinary_sdk: 
   uuid: 
+  # Regula Document Reader SDK
+  flutter_document_reader_api: any
+  flutter_document_reader_core_fullrfid: any
    
 
   # The following adds the Cupertino Icons font to your application.

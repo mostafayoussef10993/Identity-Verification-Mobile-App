@@ -1,3 +1,5 @@
+// ignore_for_file: unused_field
+
 import 'dart:io';
 import 'package:dio/dio.dart';
 import '../../core/utils/logger.dart';
@@ -18,6 +20,7 @@ class CloudinaryService {
     required File imageFile,
     required String folder,
     required String publicId, // unique filename e.g. 'user123_front'
+    Function(double progress)? onProgress,
   }) async {
     try {
       AppLogger.info('Uploading to Cloudinary: $folder/$publicId');
@@ -36,6 +39,11 @@ class CloudinaryService {
       final response = await _dio.post(
         'https://api.cloudinary.com/v1_1/$_cloudName/image/upload',
         data: formData,
+        onSendProgress: (sent, total) {
+          if (total > 0 && onProgress != null) {
+            onProgress(sent / total);
+          }
+        },
       );
 
       if (response.statusCode == 200) {

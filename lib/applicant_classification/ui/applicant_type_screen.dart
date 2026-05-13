@@ -1,6 +1,9 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kyc/core/widgets/segmented_progress_bar.dart';
 import 'package:kyc/kyc_application/cubit/kyc_application_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/kyc_app_bar.dart';
@@ -73,7 +76,7 @@ class _ApplicantTypeScreenState extends State<ApplicantTypeScreen> {
             child: Column(
               children: [
                 // Segmented progress
-                _SegmentedProgressBar(current: 1, total: 4),
+                const SegmentedProgressBar(current: 1, total: 4),
 
                 Expanded(
                   child: Padding(
@@ -267,51 +270,6 @@ class _TypeCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// Reuse from phone_entry_screen or move to core/widgets
-class _SegmentedProgressBar extends StatelessWidget {
-  final int current;
-  final int total;
-  const _SegmentedProgressBar({required this.current, required this.total});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              children: List.generate(total, (i) {
-                return Expanded(
-                  child: Container(
-                    height: 4,
-                    margin: const EdgeInsets.only(right: 4),
-                    decoration: BoxDecoration(
-                      color: i < current
-                          ? AppColors.primary
-                          : AppColors.divider,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$current/$total',
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }
