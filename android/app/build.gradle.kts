@@ -56,6 +56,8 @@ dependencies {
 
     // Optional (recommended for analytics/debugging)
     implementation("com.google.firebase:firebase-analytics")
+    // The Regula Core package is large and requires multidex
+    implementation 'androidx.multidex:multidex:2.0.1' 
 }
 
 flutter {
