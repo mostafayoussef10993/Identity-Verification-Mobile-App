@@ -11,7 +11,6 @@ import '../../kyc_application/cubit/kyc_application_cubit.dart';
 import '../../kyc_application/model/kyc_application_model.dart';
 import '../../kyc_application/model/applicant_type.dart';
 import '../cubit/document_upload_cubit.dart';
-import 'document_preview_screen.dart';
 
 class IdUploadScreen extends StatefulWidget {
   final KycApplicationModel application;

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../repository/document_upload_repository.dart';
-import '../service/image_quality_validator.dart';
 import '../../core/utils/logger.dart';
 
 part 'document_upload_state.dart';
