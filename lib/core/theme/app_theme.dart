@@ -22,6 +22,7 @@ class AppColors {
   static const Color success = Color(0xFF4ECDC4);
   static const Color error = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);
+  static const Color info = Color(0xFF3B82F6); // ← ADD THIS (blue)
 
   // UI elements
   static const Color divider = Color(0xFFE5E7EB);

@@ -63,7 +63,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '834985001119',
     projectId: 'kycflutter-7cd11',
     storageBucket: 'kycflutter-7cd11.firebasestorage.app',
-    iosBundleId: 'com.example.kyc',
+    iosBundleId: 'com.mostafa.kyc',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -72,7 +72,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '834985001119',
     projectId: 'kycflutter-7cd11',
     storageBucket: 'kycflutter-7cd11.firebasestorage.app',
-    iosBundleId: 'com.example.kyc',
+    iosBundleId: 'com.mostafa.kyc',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

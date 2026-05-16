@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kyc/document_verification/cubit/document_verification_state.dart';
 import '../model/verification_result_model.dart';

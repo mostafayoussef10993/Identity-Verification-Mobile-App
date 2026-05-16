@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kyc/kyc_application/cubit/kyc_application_cubit.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/kyc_app_bar.dart';
 import '../../core/widgets/segmented_progress_bar.dart';
+import 'package:flutter_bloc/flutter_bloc.dart'; // ← ADD THIS
 
 class ReadinessConfirmationScreen extends StatelessWidget {
   const ReadinessConfirmationScreen({super.key});
@@ -86,10 +88,10 @@ class ReadinessConfirmationScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Sprint 3 — navigate to Regula document scan
-                  context.goNamed('documentScan');
-                },
+                onPressed: () => context.goNamed(
+                  'documentScan',
+                  extra: context.read<KycApplicationCubit>().currentApplication,
+                ),
                 child: const Text(
                   'Start verification',
                   style: AppTextStyles.buttonText,

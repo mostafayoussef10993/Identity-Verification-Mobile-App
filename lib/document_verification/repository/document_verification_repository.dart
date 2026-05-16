@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../model/verification_result_model.dart';
 import '../../document_upload/service/cloudinary_service.dart';
@@ -9,7 +9,6 @@ class DocumentVerificationRepository {
   final CloudinaryService _cloudinary = CloudinaryService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Uploads portrait image to Cloudinary and saves results to Firestore.
   Future<VerificationResultModel> uploadVerificationAssets({
     required VerificationResultModel result,
     required String userId,
@@ -17,13 +16,13 @@ class DocumentVerificationRepository {
     Function(double)? onProgress,
   }) async {
     try {
-      // Upload portrait if available
-      if (result.portraitImageBase64 != null) {
+      // FIX: portrait is now Uint8List — write to temp file then upload
+      if (result.portraitBytes != null) {
         onProgress?.call(0.2);
-        AppLogger.info('Uploading portrait to Cloudinary...');
+        AppLogger.info('Uploading portrait...');
 
-        final portraitUrl = await _uploadBase64Image(
-          base64Data: result.portraitImageBase64!,
+        final portraitUrl = await _uploadBytesAsImage(
+          bytes: result.portraitBytes!,
           folder: 'kyc/$userId/portrait',
           publicId: '${applicationId}_portrait',
         );
@@ -33,7 +32,7 @@ class DocumentVerificationRepository {
 
       onProgress?.call(0.85);
 
-      // Save full verification results to Firestore
+      // Save to Firestore
       await _firestore
           .collection('kyc_applications')
           .doc(applicationId)
@@ -45,7 +44,6 @@ class DocumentVerificationRepository {
             'userId': userId,
           });
 
-      // Also update the parent application document
       await _firestore
           .collection('kyc_applications')
           .doc(applicationId)
@@ -61,31 +59,22 @@ class DocumentVerificationRepository {
           });
 
       onProgress?.call(1.0);
-      AppLogger.success('Verification assets saved to Firestore');
-
+      AppLogger.success('Verification results saved');
       return result;
     } catch (e) {
       AppLogger.error('uploadVerificationAssets failed', e);
-      // Return result even if upload fails — data still extracted
       return result;
     }
   }
 
-  Future<String> _uploadBase64Image({
-    required String base64Data,
+  // FIX: takes Uint8List directly — no base64 conversion needed
+  Future<String> _uploadBytesAsImage({
+    required Uint8List bytes,
     required String folder,
     required String publicId,
   }) async {
-    // Remove data URL prefix if present
-    final cleanBase64 = base64Data.contains(',')
-        ? base64Data.split(',').last
-        : base64Data;
-
-    final bytes = base64Decode(cleanBase64);
-
-    // Write to temp file then upload
-    final tempDir = Directory.systemTemp;
-    final tempFile = File('${tempDir.path}/$publicId.jpg');
+    // Write bytes to temp file
+    final tempFile = File('${Directory.systemTemp.path}/$publicId.jpg');
     await tempFile.writeAsBytes(bytes);
 
     final url = await _cloudinary.uploadImage(
@@ -94,9 +83,8 @@ class DocumentVerificationRepository {
       publicId: publicId,
     );
 
-    // Clean up temp file
+    // Clean up
     if (await tempFile.exists()) await tempFile.delete();
-
     return url;
   }
 }

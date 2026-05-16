@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kyc/applicant_classification/ui/applicant_type_screen.dart';
@@ -74,18 +73,6 @@ GoRouter buildRouter({
         path: '/readiness',
         name: 'readiness',
         builder: (context, state) => const ReadinessConfirmationScreen(),
-      ),
-      GoRoute(
-        path: '/document-scan', // placeholder for Sprint 3
-        name: 'documentScan',
-        builder: (context, state) => const Scaffold(
-          body: Center(
-            child: Text(
-              'Document Scan — Sprint 3',
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
       ),
       GoRoute(
         path: '/document-scan',

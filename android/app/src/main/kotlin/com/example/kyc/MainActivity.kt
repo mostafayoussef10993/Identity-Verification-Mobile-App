@@ -1,4 +1,4 @@
-package com.example.kyc
+package com.mostafa.kyc
 
 import io.flutter.embedding.android.FlutterActivity
 

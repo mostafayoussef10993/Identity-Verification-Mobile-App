@@ -6,8 +6,8 @@ plugins {
 }
 
 android {
-    namespace = "com.example.kyc"
-    compileSdk = 35
+    namespace = "com.mostafa.kyc"
+    compileSdk = 36
 
     // Stable NDK version (recommended for camera, ML, KYC SDKs)
     ndkVersion = "27.0.12077973"
@@ -22,8 +22,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.kyc"
-        minSdk = 23
+        applicationId = "com.mostafa.kyc"
+        minSdk = 24
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -57,7 +57,7 @@ dependencies {
     // Optional (recommended for analytics/debugging)
     implementation("com.google.firebase:firebase-analytics")
     // The Regula Core package is large and requires multidex
-    implementation 'androidx.multidex:multidex:2.0.1' 
+    implementation("androidx.multidex:multidex:2.0.1") 
 }
 
 flutter {

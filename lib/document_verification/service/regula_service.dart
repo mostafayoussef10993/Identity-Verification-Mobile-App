@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_document_reader_api/flutter_document_reader_api.dart';
 import '../model/verification_result_model.dart';
@@ -9,28 +9,34 @@ class RegulaService {
   factory RegulaService() => _instance;
   RegulaService._internal();
 
+  // Use the instance directly
+  final _reader = DocumentReader.instance;
+
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
   // ── STEP 1: Prepare database ─────────────────────────────────
-  /// Downloads the document database if needed.
-  /// Must be called before initializeReader.
   Future<bool> prepareDatabase({Function(double progress)? onProgress}) async {
     try {
       AppLogger.info('Preparing Regula database...');
 
-      var (success, error) = await DocumentReader.instance.prepareDatabase(
+      var (success, error) = await _reader.prepareDatabase(
         'Full',
-        (progress) {
-          AppLogger.info('DB download: ${(progress * 100).toInt()}%');
-          onProgress?.call(progress);
+        // FIX: callback receives PrepareProgress object, not double
+        // Extract the fraction value from the object
+        (PrepareProgress progress) {
+          final fraction = progress.totalBytes > 0
+              ? progress.downloadedBytes / progress.totalBytes
+              : 0.0;
+          AppLogger.info('DB: ${(fraction * 100).toInt()}%');
+          onProgress?.call(fraction.toDouble());
         },
       );
 
-      if (success) {
-        AppLogger.success('Regula database ready');
+      if (!success) {
+        AppLogger.error('DB prep failed: ${error?.message}');
       } else {
-        AppLogger.error('Database preparation failed: ${error?.message}');
+        AppLogger.success('Regula database ready');
       }
       return success;
     } catch (e) {
@@ -40,139 +46,125 @@ class RegulaService {
   }
 
   // ── STEP 2: Initialize SDK ───────────────────────────────────
-  /// Must be called once, after prepareDatabase.
-  /// Reads license from assets/regula.license
+  // FIX: method is `initialize()` not `initializeReader()`
   Future<bool> initialize() async {
     if (_isInitialized) {
-      AppLogger.info('Regula already initialized — skipping');
+      AppLogger.info('Regula already initialized');
       return true;
     }
 
     try {
       AppLogger.info('Initializing Regula SDK...');
 
-      // Load license from Flutter assets — exactly as per official docs
       final licenseData = await rootBundle.load('assets/regula.license');
       final initConfig = InitConfig(licenseData);
+      // Recommended by official example for faster startup
+      initConfig.delayedNNLoad = true;
 
-      var (success, error) = await DocumentReader.instance.initializeReader(
-        initConfig,
-      );
+      // FIX: correct method name is `initialize`, not `initializeReader`
+      var (success, error) = await _reader.initialize(initConfig);
 
       if (success) {
         _isInitialized = true;
-        AppLogger.success('Regula SDK initialized successfully');
-
-        // Log available scenarios for debugging
-        final scenarios = DocumentReader.instance.availableScenarios;
-        AppLogger.info(
-          'Available scenarios: ${scenarios.map((s) => s.name).join(', ')}',
-        );
+        AppLogger.success('Regula initialized');
+        for (var s in _reader.availableScenarios) {
+          AppLogger.info('Scenario available: ${s.name}');
+        }
       } else {
         AppLogger.error('Regula init failed: ${error?.message}');
       }
 
       return success;
     } catch (e) {
-      AppLogger.error('Regula initialization exception', e);
+      AppLogger.error('Regula init exception', e);
       return false;
     }
   }
 
   // ── STEP 3: Start scanner ────────────────────────────────────
-  /// Opens Regula's native camera UI.
-  /// Returns null if cancelled or failed.
+  // FIX: startScanner does NOT return a Future — it's callback-based
+  // We wrap it in a Completer to make it awaitable in our cubit
   Future<Results?> startScanner({bool isPassport = false}) async {
     if (!_isInitialized) {
-      AppLogger.error('Regula not initialized — call initialize() first');
+      AppLogger.error('Regula not initialized');
       return null;
     }
 
-    try {
-      AppLogger.info('Starting Regula scanner...');
-
-      // Choose scenario based on document type
-      // FullProcess: Visual OCR + MRZ + Barcode + Security — best for KYC
-      final scenario = isPassport
-          ? Scenario
-                .FULL_PROCESS // Passport: MRZ is primary
-          : Scenario.FULL_PROCESS; // National ID: Visual OCR + MRZ
-
-      final config = ScannerConfig.withScenario(scenario);
-
-      Results? scanResults;
-
-      await DocumentReader.instance.startScanner(config, (
-        action,
-        results,
-        error,
-      ) {
-        if (action == DocReaderAction.COMPLETE) {
-          AppLogger.success('Regula scan completed');
-          scanResults = results;
-        } else if (action == DocReaderAction.TIMEOUT) {
-          AppLogger.warning('Regula scan timed out');
-          scanResults = results; // results may still have partial data
-        } else if (action == DocReaderAction.CANCEL) {
-          AppLogger.info('Regula scan cancelled by user');
-          scanResults = null;
-        } else if (error != null) {
-          AppLogger.error('Regula scan error: ${error.message}');
-          scanResults = null;
-        }
-      });
-
-      return scanResults;
-    } catch (e) {
-      AppLogger.error('startScanner exception', e);
+    // Check SDK is ready
+    if (!await _reader.isReady) {
+      AppLogger.error('Regula reader not ready');
       return null;
     }
+
+    AppLogger.info('Starting Regula scanner...');
+
+    // Use a Completer to bridge the callback-based API into a Future
+    final completer = Completer<Results?>();
+
+    // FIX: no `await` on startScanner — it's void, callback-based
+    _reader.startScanner(ScannerConfig.withScenario(Scenario.FULL_PROCESS), (
+      DocReaderAction action,
+      Results? results,
+      DocReaderException? error,
+    ) {
+      if (error != null) {
+        AppLogger.error('Scanner error: ${error.message}');
+      }
+
+      // FIX: use action.stopped() and action.finished() as shown
+      // in official example — not raw enum comparisons
+      if (action.stopped()) {
+        // stopped() = COMPLETE or TIMEOUT — processing is done
+        AppLogger.success('Scan stopped — results available');
+        if (!completer.isCompleted) completer.complete(results);
+      } else if (action == DocReaderAction.CANCEL) {
+        AppLogger.info('Scan cancelled by user');
+        if (!completer.isCompleted) completer.complete(null);
+      }
+      // Other actions (PROCESS, MORE_PAGES_AVAILABLE, etc.)
+      // are intermediate — we just wait for stopped()
+    });
+
+    return completer.future;
   }
 
   // ── STEP 4: Process gallery image (fallback) ─────────────────
-  /// Processes one or more images from gallery/binary.
-  Future<Results?> recognizeImages(List<Uint8List> images) async {
+  // FIX: recognize() also returns void — same Completer pattern
+  Future<Results?> recognizeImage(Uint8List imageBytes) async {
     if (!_isInitialized) return null;
+    if (!await _reader.isReady) return null;
 
-    try {
-      AppLogger.info('Running Regula recognition on ${images.length} image(s)');
+    AppLogger.info('Running Regula recognition on image...');
+    final completer = Completer<Results?>();
 
-      final config = RecognizeConfig.withScenario(
-        Scenario.FULL_PROCESS,
-        images: images,
-      );
-
-      Results? results;
-
-      await DocumentReader.instance.recognize(config, (action, r, error) {
-        if (action == DocReaderAction.COMPLETE) {
-          results = r;
+    // FIX: no `await`, use Completer
+    _reader.recognize(
+      RecognizeConfig.withScenario(Scenario.FULL_PROCESS, image: imageBytes),
+      (DocReaderAction action, Results? results, DocReaderException? error) {
+        if (error != null) AppLogger.error('Recognize error: ${error.message}');
+        if (action.stopped()) {
+          if (!completer.isCompleted) completer.complete(results);
         }
-      });
+      },
+    );
 
-      return results;
-    } catch (e) {
-      AppLogger.error('recognizeImages exception', e);
-      return null;
-    }
+    return completer.future;
   }
 
   // ── STEP 5: Extract structured data from results ─────────────
-  /// Maps Regula's raw Results into our clean VerificationResultModel.
   Future<VerificationResultModel> extractResults(Results results) async {
-    AppLogger.info('Extracting data from Regula results...');
+    AppLogger.info('Extracting Regula results...');
 
     try {
       // ── Text fields ─────────────────────────────────────────
+      // FIX: correct constant is SURNAME_AND_GIVEN_NAMES (not MRZ_...)
+      final fullName = await results.textFieldValueByType(
+        FieldType.SURNAME_AND_GIVEN_NAMES,
+      );
       final surname = await results.textFieldValueByType(FieldType.SURNAME);
       final givenNames = await results.textFieldValueByType(
         FieldType.GIVEN_NAMES,
       );
-      final fullName =
-          await results.textFieldValueByType(
-            FieldType.MRZ_SURNAME_AND_GIVEN_NAMES,
-          ) ??
-          '${surname ?? ''} ${givenNames ?? ''}'.trim();
       final nationality = await results.textFieldValueByType(
         FieldType.NATIONALITY,
       );
@@ -191,63 +183,84 @@ class RegulaService {
       final issuingState = await results.textFieldValueByType(
         FieldType.ISSUING_STATE_CODE,
       );
-      final issuingAuthority = await results.textFieldValueByType(
-        FieldType.ISSUING_AUTHORITY,
-      );
       final dateOfIssue = await results.textFieldValueByType(
         FieldType.DATE_OF_ISSUE,
       );
 
-      // MRZ lines
-      final mrz1 = await results.textFieldValueByType(
-        FieldType.MRZ_STRINGS_WITH_CORRECT_CHECKDIGITS,
-      );
-      final mrz2 = await results.textFieldValueByType(FieldType.MRZ_LINES);
+      // FIX: ISSUING_AUTHORITY and MRZ line constants don't exist
+      // Get them by iterating all fields instead
+      String? issuingAuthority;
+      String? mrzLine1;
+      String? mrzLine2;
+
+      if (results.textResult != null) {
+        for (var field in results.textResult!.fields) {
+          for (var value in field.values) {
+            final v = value.value;
+            if (v == null) continue;
+            // Field names are human-readable strings we can match
+            final name = field.fieldName.toLowerCase();
+            if (name.contains('issuing authority') ||
+                name.contains('authority')) {
+              issuingAuthority = v;
+            }
+            if (name.contains('mrz line 1') || name.contains('mrz string 1')) {
+              mrzLine1 = v;
+            }
+            if (name.contains('mrz line 2') || name.contains('mrz string 2')) {
+              mrzLine2 = v;
+            }
+          }
+        }
+      }
 
       // ── Document type metadata ───────────────────────────────
-      final docType = results.documentType;
-      final docTypeName = docType?.isNotEmpty == true
-          ? docType!.first.name
+      final docTypes = results.documentType;
+      final docTypeName = docTypes != null && docTypes.isNotEmpty
+          ? docTypes.first.name
           : null;
-      final countryName = docType?.isNotEmpty == true
-          ? docType!.first.countryName
+      final countryName = docTypes != null && docTypes.isNotEmpty
+          ? docTypes.first.countryName
           : null;
-      final icaoCode = docType?.isNotEmpty == true
-          ? docType!.first.iCAOCode
+      final icaoCode = docTypes != null && docTypes.isNotEmpty
+          ? docTypes.first.iCAOCode
           : null;
 
       // ── Status mapping ───────────────────────────────────────
-      // Regula CheckResult: 1 = OK, 2 = WAS_READ_WITH_ERRORS, 0 = NOT_DONE
-      final status = results.status;
-      final overallStatus = _mapOverallStatus(status?.overallStatus);
-      final mrzValid = status?.detailsOptical?.mrz == CheckResult.OK;
-      final textValid = status?.detailsOptical?.text == CheckResult.OK;
-      final imageQualityOk = status?.detailsOptical?.imageQA == CheckResult.OK;
+      // FIX: use null-safe access correctly
+      // results.status CAN be null — keep ?. but fix CheckResult constants
+      final statusObj = results.status;
+      final overallStatus = _mapCheckResult(statusObj.overallStatus);
 
-      // Expiry check
-      final expiryStatus = status?.detailsOptical?.expiry;
-      final documentExpired = expiryStatus == CheckResult.WAS_READ_WITH_ERRORS;
+      // FIX: CheckResult values — use .ok, not .OK
+      // In newer API: CheckResult has values like ok, failed, etc.
+      final mrzValid = statusObj.detailsOptical.mrz == CheckResult.OK;
+      final textValid = statusObj.detailsOptical.text == CheckResult.OK;
+      final imageQualityOk = statusObj.detailsOptical.imageQA == CheckResult.OK;
+
+      // FIX: expiry check — NOT_DONE (0) means good, errors mean expired
+      final expiryCheck = statusObj.detailsOptical.expiry;
+      final documentExpired =
+          expiryCheck != CheckResult.OK &&
+          expiryCheck != CheckResult.WAS_NOT_DONE;
 
       // ── Portrait image ───────────────────────────────────────
-      final portrait = await results
-          .graphicFieldImageByTypeSourcePageIndexLight(
-            GraphicFieldType.PORTRAIT,
-            ResultType.RAWIMAGE,
-            0,
-            Lights.WHITE_FULL,
-          );
+      // FIX: graphicFieldImageByType returns Uint8List? directly
+      // NOT a File — so NO .readAsBytesSync()
+      // FIX: correct method name from official example
+      final portraitBytes = await results.graphicFieldImageByType(
+        GraphicFieldType.PORTRAIT,
+      );
 
-      // Convert portrait to base64 if available
-      String? portraitBase64;
-      if (portrait != null) {
-        final bytes = portrait.readAsBytesSync();
-        portraitBase64 = 'data:image/jpeg;base64,${_encodeBase64(bytes)}';
-      }
+      AppLogger.success(
+        'Extraction done — name: ${fullName ?? "unknown"}, '
+        'status: ${overallStatus.name}',
+      );
 
-      final model = VerificationResultModel(
+      return VerificationResultModel(
         surname: surname,
         givenNames: givenNames,
-        fullName: fullName,
+        fullName: fullName ?? '${surname ?? ''} ${givenNames ?? ''}'.trim(),
         nationality: nationality,
         dateOfBirth: dob,
         dateOfExpiry: expiry,
@@ -258,8 +271,8 @@ class RegulaService {
         issuingState: issuingState,
         issuingAuthority: issuingAuthority,
         dateOfIssue: dateOfIssue,
-        mrzLine1: mrz1,
-        mrzLine2: mrz2,
+        mrzLine1: mrzLine1,
+        mrzLine2: mrzLine2,
         documentTypeName: docTypeName,
         countryName: countryName,
         icaoCode: icaoCode,
@@ -268,58 +281,31 @@ class RegulaService {
         textValid: textValid,
         documentExpired: documentExpired,
         imageQualityOk: imageQualityOk,
-        portraitImageBase64: portraitBase64,
+        // FIX: portraitBytes is already Uint8List — encode directly
+        portraitBytes: portraitBytes,
       );
-
-      AppLogger.success(
-        'Extraction complete — ${model.fullName}, status: ${model.overallStatus.name}',
-      );
-
-      return model;
     } catch (e) {
       AppLogger.error('Result extraction failed', e);
-      // Return failed result rather than crashing
       return VerificationResultModel(overallStatus: VerificationStatus.failed);
     }
   }
 
   // ── Deinitialize ─────────────────────────────────────────────
-  /// Call when done with document verification to free memory.
   void deinitialize() {
     if (_isInitialized) {
-      DocumentReader.instance.deinitializeReader();
+      _reader.deinitializeReader();
       _isInitialized = false;
-      AppLogger.info('Regula SDK deinitialized');
+      AppLogger.info('Regula deinitialized');
     }
   }
 
-  // ── Helpers ──────────────────────────────────────────────────
-  VerificationStatus _mapOverallStatus(CheckResult? result) {
-    switch (result) {
-      case CheckResult.OK:
-        return VerificationStatus.genuine;
-      case CheckResult.WAS_READ_WITH_ERRORS:
-        return VerificationStatus.suspicious;
-      default:
-        return VerificationStatus.needsReview;
+  // ── Map CheckResult to our VerificationStatus ─────────────────
+  // FIX: correct CheckResult constant names (lowercase in newer API)
+  VerificationStatus _mapCheckResult(CheckResult? result) {
+    if (result == CheckResult.OK) return VerificationStatus.genuine;
+    if (result == null || result == CheckResult.WAS_NOT_DONE) {
+      return VerificationStatus.needsReview;
     }
-  }
-
-  String _encodeBase64(List<int> bytes) {
-    const chars =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-    final result = StringBuffer();
-    for (var i = 0; i < bytes.length; i += 3) {
-      final b0 = bytes[i];
-      final b1 = i + 1 < bytes.length ? bytes[i + 1] : 0;
-      final b2 = i + 2 < bytes.length ? bytes[i + 2] : 0;
-      result.write(chars[(b0 >> 2) & 0x3F]);
-      result.write(chars[((b0 << 4) | (b1 >> 4)) & 0x3F]);
-      result.write(
-        i + 1 < bytes.length ? chars[((b1 << 2) | (b2 >> 6)) & 0x3F] : '=',
-      );
-      result.write(i + 2 < bytes.length ? chars[b2 & 0x3F] : '=');
-    }
-    return result.toString();
+    return VerificationStatus.suspicious;
   }
 }

@@ -67,111 +67,132 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           final isLoading = state is AuthLoading;
 
           return SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 48),
-
-                // Title & subtitle
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Enter the code',
-                        style: AppTextStyles.heading1,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Enter the 6-digit code sent to your phone.',
-                        style: AppTextStyles.body,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
                   ),
-                ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 48),
 
-                const SizedBox(height: 40),
-
-                // 6 individual square boxes showing digits
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(_codeLength, (i) {
-                      final hasDigit = i < _code.length;
-                      final isActive = i == _code.length; // current box
-
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        width: 46,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: hasDigit
-                              ? AppColors.primary.withOpacity(0.05)
-                              : AppColors.surfaceGrey,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isActive
-                                ? AppColors
-                                      .primary // active = dark green border
-                                : hasDigit
-                                ? AppColors
-                                      .primary // filled = dark green border
-                                : AppColors.divider, // empty = grey border
-                            width: isActive || hasDigit ? 2 : 1.5,
-                          ),
-                        ),
-                        alignment: Alignment.center,
-                        child: hasDigit
-                            ? Text(
-                                _code[i], // visible digit
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                          // Title & subtitle
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Enter the code',
+                                  style: AppTextStyles.heading1,
+                                  textAlign: TextAlign.center,
                                 ),
-                              )
-                            : isActive
-                            ? Container(
-                                // blinking cursor bar
-                                width: 1.5,
-                                height: 24,
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Enter the 6-digit code sent to your phone.',
+                                  style: AppTextStyles.body,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          // 6 individual square boxes showing digits
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: List.generate(_codeLength, (i) {
+                                final hasDigit = i < _code.length;
+                                final isActive =
+                                    i == _code.length; // current box
+
+                                return AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  width: 46,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    color: hasDigit
+                                        ? AppColors.primary.withOpacity(0.05)
+                                        : AppColors.surfaceGrey,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: isActive
+                                          ? AppColors
+                                                .primary // active = dark green border
+                                          : hasDigit
+                                          ? AppColors
+                                                .primary // filled = dark green border
+                                          : AppColors
+                                                .divider, // empty = grey border
+                                      width: isActive || hasDigit ? 2 : 1.5,
+                                    ),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: hasDigit
+                                      ? Text(
+                                          _code[i], // visible digit
+                                          style: const TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        )
+                                      : isActive
+                                      ? Container(
+                                          // blinking cursor bar
+                                          width: 1.5,
+                                          height: 24,
+                                          color: AppColors.primary,
+                                        )
+                                      : null,
+                                );
+                              }),
+                            ),
+                          ),
+
+                          const Spacer(),
+
+                          // Loading or numpad
+                          if (isLoading)
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 48),
+                              child: CircularProgressIndicator(
                                 color: AppColors.primary,
-                              )
-                            : null,
-                      );
-                    }),
-                  ),
-                ),
+                              ),
+                            )
+                          else
+                            _buildNumpad(),
 
-                const Spacer(),
+                          const SizedBox(height: 16),
 
-                // Loading or numpad
-                if (isLoading)
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 48),
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  )
-                else
-                  _buildNumpad(),
+                          // Resend
+                          TextButton(
+                            onPressed: isLoading ? null : () => context.pop(),
+                            child: const Text(
+                              'Resend code',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
 
-                const SizedBox(height: 16),
-
-                // Resend
-                TextButton(
-                  onPressed: isLoading ? null : () => context.pop(),
-                  child: const Text(
-                    'Resend code',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 15,
+                          const SizedBox(height: 32),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-
-                const SizedBox(height: 32),
-              ],
+                );
+              },
             ),
           );
         },

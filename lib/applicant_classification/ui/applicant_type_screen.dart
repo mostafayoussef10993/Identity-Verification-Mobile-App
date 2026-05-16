@@ -79,8 +79,9 @@ class _ApplicantTypeScreenState extends State<ApplicantTypeScreen> {
                 const SegmentedProgressBar(current: 1, total: 4),
 
                 Expanded(
-                  child: Padding(
+                  child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+                    physics: const BouncingScrollPhysics(),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -132,6 +133,14 @@ class _ApplicantTypeScreenState extends State<ApplicantTypeScreen> {
                                           userId: authState.user.uid,
                                           applicantType: _selected!,
                                         );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Please sign in to continue.',
+                                        ),
+                                      ),
+                                    );
                                   }
                                 },
                           child: const Text(

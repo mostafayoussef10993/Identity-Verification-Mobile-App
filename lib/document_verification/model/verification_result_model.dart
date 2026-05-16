@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 /// Structured model holding everything Regula extracts from a document.
 /// Maps directly to Regula's results structure from the official docs.
 class VerificationResultModel {
@@ -34,7 +36,7 @@ class VerificationResultModel {
   final bool imageQualityOk;
 
   // ── Portrait image (base64 or bytes reference) ───────────────
-  final String? portraitImageBase64;
+  final Uint8List? portraitBytes; // ← REPLACES portraitImageBase64
 
   // ── Cloudinary URLs (set after upload) ───────────────────────
   String? documentFrontUrl;
@@ -66,7 +68,7 @@ class VerificationResultModel {
     this.textValid = false,
     this.documentExpired = false,
     this.imageQualityOk = true,
-    this.portraitImageBase64,
+    this.portraitBytes, // ← updated
     this.documentFrontUrl,
     this.documentBackUrl,
     this.portraitCloudUrl,

@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "834985001119",
-    "project_id": "kycflutter-7cd11",
-    "storage_bucket": "kycflutter-7cd11.firebasestorage.app"
+    "project_number": "40550634321",
+    "project_id": "kycregulasdk",
+    "storage_bucket": "kycregulasdk.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:834985001119:android:7bea30f52d4165fb4322aa",
+        "mobilesdk_app_id": "1:40550634321:android:b39870ccdcff560603b970",
         "android_client_info": {
-          "package_name": "com.example.kyc"
+          "package_name": "com.mostafa.kyc"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyA_Hpd0jmjZ8wskNJywSqoVehcN9VFOvw0"
+          "current_key": "AIzaSyBmN1X4pMnuCup9SE5jqVucCdRrAEt7T5A"
         }
       ],
       "services": {
