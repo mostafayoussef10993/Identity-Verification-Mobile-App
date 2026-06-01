@@ -1,10 +1,18 @@
+// lib/document_upload/ui/readiness_confirmation_screen.dart
+//
+// FIXED: Added null guard for currentApplication to prevent crash when
+// KycApplicationCubit is not in KycApplicationActive state.
+// ══════════════════════════════════════════════════════════════════════════════
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kyc/kyc_application/cubit/kyc_application_cubit.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/kyc_app_bar.dart';
 import '../../core/widgets/segmented_progress_bar.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; // ← ADD THIS
+import '../../kyc_application/cubit/kyc_application_cubit.dart';
+import '../../kyc_application/cubit/kyc_application_state.dart';
+import '../../kyc_application/model/kyc_application_model.dart';
 
 class ReadinessConfirmationScreen extends StatelessWidget {
   const ReadinessConfirmationScreen({super.key});
@@ -18,17 +26,15 @@ class ReadinessConfirmationScreen extends StatelessWidget {
         child: Column(
           children: [
             const SegmentedProgressBar(current: 3, total: 4),
-
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 48, 24, 0),
                 child: Column(
                   children: [
-                    // Illustration
                     Container(
                       width: 120,
                       height: 120,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.backgroundMint,
                         shape: BoxShape.circle,
                       ),
@@ -38,9 +44,7 @@ class ReadinessConfirmationScreen extends StatelessWidget {
                         color: AppColors.primary,
                       ),
                     ),
-
                     const SizedBox(height: 32),
-
                     Text(
                       "Great, we got\nyour document!",
                       style: AppTextStyles.heading1,
@@ -48,14 +52,11 @@ class ReadinessConfirmationScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      "We'll now verify your document and check its authenticity. This should only take a moment.",
+                      "We'll now verify your document and check its authenticity.",
                       style: AppTextStyles.body,
                       textAlign: TextAlign.center,
                     ),
-
                     const SizedBox(height: 32),
-
-                    // What happens next info card
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -84,18 +85,50 @@ class ReadinessConfirmationScreen extends StatelessWidget {
                 ),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-              child: ElevatedButton(
-                onPressed: () => context.goNamed(
-                  'documentScan',
-                  extra: context.read<KycApplicationCubit>().currentApplication,
-                ),
-                child: const Text(
-                  'Start verification',
-                  style: AppTextStyles.buttonText,
-                ),
+              child: BlocBuilder<KycApplicationCubit, KycApplicationState>(
+                builder: (context, state) {
+                  // ── FIXED: Null guard — show error if application not active ──
+                  final KycApplicationModel? application =
+                      state is KycApplicationActive ? state.application : null;
+
+                  if (application == null) {
+                    return Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            // ignore: deprecated_member_use
+                            color: AppColors.error.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'Session expired. Please go back and start again.',
+                            style: TextStyle(color: AppColors.error),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton(
+                          onPressed: () => context.goNamed('applicantType'),
+                          child: const Text('Go back'),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return ElevatedButton(
+                    onPressed: () => context.goNamed(
+                      'documentScan',
+                      extra: application, // ← Safe: never null here
+                    ),
+                    child: const Text(
+                      'Start verification',
+                      style: AppTextStyles.buttonText,
+                    ),
+                  );
+                },
               ),
             ),
           ],
