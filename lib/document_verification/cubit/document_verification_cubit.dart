@@ -1,10 +1,23 @@
-// ignore_for_file: unused_import
+// lib/document_verification/cubit/document_verification_cubit.dart
+//
+// ══════════════════════════════════════════════════════════════════════════════
+// DOCUMENT VERIFICATION CUBIT
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Changes:
+//   • initializeSdk() — single call, offline DB loaded inside RegulaService
+//   • startScan() — passes applicantType for dual-workflow (Egyptian vs Passport)
+//   • Calls saveVerificationResults() (text-only Firestore) — no image upload
+//   • Portrait bytes remain in result object for Face SDK in Sprint 4
+//
+// ══════════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:kyc/document_verification/cubit/document_verification_state.dart';
+
 import '../model/verification_result_model.dart';
 import '../service/regula_service.dart';
 import '../repository/document_verification_repository.dart';
+import '../cubit/document_verification_state.dart';
 import '../../kyc_application/model/applicant_type.dart';
 import '../../core/utils/logger.dart';
 
@@ -19,46 +32,18 @@ class DocumentVerificationCubit extends Cubit<DocumentVerificationState> {
        _repository = repository ?? DocumentVerificationRepository(),
        super(const DocumentVerificationInitial());
 
-  // ── Initialize SDK ───────────────────────────────────────────
-  /// Call this when DocumentScanScreen loads.
+  // ── Initialize SDK ─────────────────────────────────────────────────────────
+  // Loads offline db.dat from assets — no network download.
   Future<void> initializeSdk() async {
     if (_regulaService.isInitialized) {
       emit(const DocumentVerificationReady());
       return;
     }
 
-    // Step 1 — Download database
     emit(
       const DocumentVerificationInitializing(
-        message: 'Preparing document database...',
-        progress: 0,
-      ),
-    );
-
-    final dbReady = await _regulaService.prepareDatabase(
-      onProgress: (p) => emit(
-        DocumentVerificationInitializing(
-          message: 'Downloading database ${(p * 100).toInt()}%',
-          progress: p,
-        ),
-      ),
-    );
-
-    if (!dbReady) {
-      emit(
-        const DocumentVerificationError(
-          message:
-              'Failed to download the document database. Please check your internet connection.',
-          canRetry: true,
-        ),
-      );
-      return;
-    }
-
-    // Step 2 — Initialize SDK
-    emit(
-      const DocumentVerificationInitializing(
-        message: 'Initializing verification engine...',
+        message: 'Loading verification engine...',
+        progress: null,
       ),
     );
 
@@ -70,15 +55,18 @@ class DocumentVerificationCubit extends Cubit<DocumentVerificationState> {
       emit(
         const DocumentVerificationError(
           message:
-              'Failed to initialize document verification. Please check your license.',
-          canRetry: false, // License issues can't be retried by the user
+              'Failed to initialize document verification.\n\n'
+              'Please ensure the app is fully installed and try again.',
+          canRetry: true,
         ),
       );
     }
   }
 
-  // ── Start scanning ───────────────────────────────────────────
-  /// Opens the Regula native scanner.
+  // ── Start scan ─────────────────────────────────────────────────────────────
+  // applicantType drives dual-workflow SDK configuration:
+  //   Egyptian  → double-sided, Arabic BiDi enabled
+  //   Passport  → single-sided, MRZ only
   Future<void> startScan({
     required ApplicantType applicantType,
     required String userId,
@@ -91,9 +79,8 @@ class DocumentVerificationCubit extends Cubit<DocumentVerificationState> {
 
     emit(const DocumentVerificationScanning());
 
-    final isPassport = applicantType != ApplicantType.egyptian;
     final rawResults = await _regulaService.startScanner(
-      isPassport: isPassport,
+      applicantType: applicantType,
     );
 
     // User cancelled
@@ -102,43 +89,53 @@ class DocumentVerificationCubit extends Cubit<DocumentVerificationState> {
       return;
     }
 
-    // Extract structured data from raw Regula results
     emit(const DocumentVerificationProcessing());
 
-    final verificationResult = await _regulaService.extractResults(rawResults);
+    final verificationResult = await _regulaService.extractResults(
+      rawResults,
+      applicantType: applicantType,
+    );
 
-    // Failed extraction
     if (verificationResult.overallStatus == VerificationStatus.failed) {
       emit(
         const DocumentVerificationError(
-          message: 'Could not read the document. Please try again.',
+          message:
+              'Could not read the document. Please ensure:\n'
+              '• All four corners are visible\n'
+              '• There is no glare on the document\n'
+              '• You are in a well-lit area',
           canRetry: true,
         ),
       );
       return;
     }
 
-    // Upload portrait + document images to Cloudinary
+    // Save text fields to Firestore — no image upload
     emit(const DocumentVerificationUploading(progress: 0.0));
 
-    final uploadedResult = await _repository.uploadVerificationAssets(
+    final savedResult = await _repository.saveVerificationResults(
       result: verificationResult,
       userId: userId,
       applicationId: applicationId,
       onProgress: (p) => emit(DocumentVerificationUploading(progress: p)),
     );
 
-    emit(DocumentVerificationSuccess(uploadedResult));
+    // Portrait bytes remain in savedResult.portraitBytes (in memory)
+    // They will be passed to Face SDK screen in Sprint 4
+    AppLogger.info(
+      'Portrait bytes available for face matching: '
+      '${savedResult.portraitBytes != null ? "${savedResult.portraitBytes!.length} bytes" : "none"}',
+    );
+
+    emit(DocumentVerificationSuccess(savedResult));
   }
 
-  // ── Retry ────────────────────────────────────────────────────
   void retry() => emit(const DocumentVerificationReady());
+  void retryInit() => initializeSdk();
 
-  // ── Cleanup ──────────────────────────────────────────────────
   @override
   Future<void> close() {
-    // Don't deinitialize here — SDK may be reused in same session
-    // Deinitialize explicitly from the screen when KYC flow completes
+    // Do NOT deinitialize — SDK stays warm for face verification
     return super.close();
   }
 }
