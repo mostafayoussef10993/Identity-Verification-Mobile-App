@@ -1,52 +1,90 @@
+// lib/document_verification/model/verification_result_model.dart
+//
+// ══════════════════════════════════════════════════════════════════════════════
+// VERIFICATION RESULT MODEL — Updated for Arabic/Egyptian ID support
+// ══════════════════════════════════════════════════════════════════════════════
+
 import 'dart:typed_data';
 
-/// Structured model holding everything Regula extracts from a document.
-/// Maps directly to Regula's results structure from the official docs.
 class VerificationResultModel {
-  // ── Identity fields (from textResult) ──────────────────────
+  // ── Latin identity fields (all document types) ────────────────────────────
   final String? surname;
   final String? givenNames;
+
+  /// Primary display name.
+  /// Egyptian: Arabic Unicode (ft_Name_Local) if available, else Latin.
+  /// Passport: Latin only.
   final String? fullName;
+
+  /// Always Latin — for backend/AML matching.
+  final String? fullNameLatin;
+
+  // ── Arabic identity fields (Egyptian National ID only) ───────────────────
+  /// Arabic name from ft_Name_Local (field type 1268).
+  /// Proper Arabic Unicode — NOT garbled Latin transliteration.
+  final String? fullNameArabic;
+  final String? surnameArabic;
+  final String? givenNamesArabic;
+
+  /// Arabic address — from Egyptian ID back side.
+  final String? addressArabic;
+
+  // ── Egyptian-specific back-side fields ───────────────────────────────────
+  final String? mothersName; // Egypt KYC requirement
+  final String? maritalStatus; // Egyptian ID back side
+  final String? religion; // Egyptian ID back side
+  final String? profession; // Egyptian ID back side
+
+  // ── Common fields ─────────────────────────────────────────────────────────
   final String? nationality;
   final String? dateOfBirth;
   final String? dateOfExpiry;
   final String? documentNumber;
-  final String? personalNumber; // National ID number for Egyptian IDs
+  final String? personalNumber;
   final String? address;
   final String? sex;
   final String? issuingState;
   final String? issuingAuthority;
   final String? dateOfIssue;
 
-  // ── MRZ fields ───────────────────────────────────────────────
+  // ── MRZ ───────────────────────────────────────────────────────────────────
   final String? mrzLine1;
   final String? mrzLine2;
   final String? mrzLine3;
 
-  // ── Document metadata ────────────────────────────────────────
-  final String? documentTypeName; // e.g. "National Identity Card"
-  final String? countryName; // e.g. "Egypt"
-  final String? icaoCode; // e.g. "EGY"
+  // ── Document metadata ─────────────────────────────────────────────────────
+  final String? documentTypeName;
+  final String? countryName;
+  final String? icaoCode;
 
-  // ── Verification status ──────────────────────────────────────
+  // ── Verification status ───────────────────────────────────────────────────
   final VerificationStatus overallStatus;
   final bool mrzValid;
   final bool textValid;
   final bool documentExpired;
   final bool imageQualityOk;
 
-  // ── Portrait image (base64 or bytes reference) ───────────────
-  final Uint8List? portraitBytes; // ← REPLACES portraitImageBase64
+  // ── Biometric ─────────────────────────────────────────────────────────────
+  final Uint8List? portraitBytes;
 
-  // ── Cloudinary URLs (set after upload) ───────────────────────
-  String? documentFrontUrl;
-  String? documentBackUrl;
-  String? portraitCloudUrl;
+  // ── Image storage policy ──────────────────────────────────────────────────
+  // Document images (front/back) are NOT uploaded anywhere.
+  // They stay on-device only. Portrait bytes are kept in memory
+  // exclusively for Face SDK matching during the same session.
 
   VerificationResultModel({
     this.surname,
     this.givenNames,
     this.fullName,
+    this.fullNameLatin,
+    this.fullNameArabic,
+    this.surnameArabic,
+    this.givenNamesArabic,
+    this.addressArabic,
+    this.mothersName,
+    this.maritalStatus,
+    this.religion,
+    this.profession,
     this.nationality,
     this.dateOfBirth,
     this.dateOfExpiry,
@@ -68,16 +106,27 @@ class VerificationResultModel {
     this.textValid = false,
     this.documentExpired = false,
     this.imageQualityOk = true,
-    this.portraitBytes, // ← updated
-    this.documentFrontUrl,
-    this.documentBackUrl,
-    this.portraitCloudUrl,
+    this.portraitBytes,
   });
+
+  bool get hasArabicName =>
+      fullNameArabic != null && fullNameArabic!.isNotEmpty;
+  bool get hasEgyptBackSideData =>
+      maritalStatus != null || religion != null || profession != null;
 
   Map<String, dynamic> toMap() => {
     'surname': surname,
     'givenNames': givenNames,
     'fullName': fullName,
+    'fullNameLatin': fullNameLatin,
+    'fullNameArabic': fullNameArabic,
+    'surnameArabic': surnameArabic,
+    'givenNamesArabic': givenNamesArabic,
+    'addressArabic': addressArabic,
+    'mothersName': mothersName,
+    'maritalStatus': maritalStatus,
+    'religion': religion,
+    'profession': profession,
     'nationality': nationality,
     'dateOfBirth': dateOfBirth,
     'dateOfExpiry': dateOfExpiry,
@@ -99,15 +148,13 @@ class VerificationResultModel {
     'textValid': textValid,
     'documentExpired': documentExpired,
     'imageQualityOk': imageQualityOk,
-    'documentFrontUrl': documentFrontUrl,
-    'documentBackUrl': documentBackUrl,
-    'portraitCloudUrl': portraitCloudUrl,
+    // Note: no image URLs — document images stay on device only
   };
 }
 
 enum VerificationStatus {
-  genuine, // CheckResult = OK (1)
-  suspicious, // CheckResult = WAS_READ_WITH_ERRORS (2)
-  needsReview, // CheckResult = NOT_DONE (0) or unknown
-  failed, // Error during processing
+  genuine, // CheckResult.OK
+  suspicious, // CheckResult error
+  needsReview, // CheckResult.WAS_NOT_DONE
+  failed, // Processing exception
 }
