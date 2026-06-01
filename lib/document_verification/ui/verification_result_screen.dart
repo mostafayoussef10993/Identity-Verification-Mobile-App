@@ -97,8 +97,7 @@ class VerificationResultScreen extends StatelessWidget {
                           _InfoRow('Full name (Latin)', result.fullNameLatin!),
                         if (result.dateOfBirth != null)
                           _InfoRow('Date of birth', result.dateOfBirth!),
-                        if (result.sex != null)
-                          _InfoRow('Sex', result.sex!),
+                        if (result.sex != null) _InfoRow('Sex', result.sex!),
                         if (result.nationality != null)
                           _InfoRow('Nationality', result.nationality!),
                       ],
@@ -113,13 +112,19 @@ class VerificationResultScreen extends StatelessWidget {
                         if (result.documentNumber != null)
                           _InfoRow('Document number', result.documentNumber!),
                         if (result.personalNumber != null)
-                          _InfoRow('National ID number', result.personalNumber!),
+                          _InfoRow(
+                            'National ID number',
+                            result.personalNumber!,
+                          ),
                         if (result.dateOfExpiry != null)
                           _InfoRow('Expiry date', result.dateOfExpiry!),
                         if (result.dateOfIssue != null)
                           _InfoRow('Issue date', result.dateOfIssue!),
                         if (result.issuingAuthority != null)
-                          _InfoRow('Issuing authority', result.issuingAuthority!),
+                          _InfoRow(
+                            'Issuing authority',
+                            result.issuingAuthority!,
+                          ),
                       ],
                     ),
 
@@ -196,7 +201,8 @@ class VerificationResultScreen extends StatelessWidget {
                       );
                     },
                   ),
-                  if (result.overallStatus == VerificationStatus.suspicious) ...[
+                  if (result.overallStatus ==
+                      VerificationStatus.suspicious) ...[
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: () => context.pop(),
@@ -222,25 +228,25 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, icon, label) = switch (status) {
       VerificationStatus.genuine => (
-          AppColors.success,
-          Icons.check_circle_rounded,
-          'Document verified',
-        ),
+        AppColors.success,
+        Icons.check_circle_rounded,
+        'Document verified',
+      ),
       VerificationStatus.suspicious => (
-          AppColors.warning,
-          Icons.warning_amber_rounded,
-          'Needs manual review',
-        ),
+        AppColors.warning,
+        Icons.warning_amber_rounded,
+        'Needs manual review',
+      ),
       VerificationStatus.needsReview => (
-          AppColors.info,
-          Icons.info_outline_rounded,
-          'Partially verified',
-        ),
+        AppColors.info,
+        Icons.info_outline_rounded,
+        'Partially verified',
+      ),
       VerificationStatus.failed => (
-          AppColors.error,
-          Icons.cancel_rounded,
-          'Verification failed',
-        ),
+        AppColors.error,
+        Icons.cancel_rounded,
+        'Verification failed',
+      ),
     };
 
     return Container(
