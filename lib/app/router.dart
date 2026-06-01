@@ -1,18 +1,38 @@
+// lib/app/router.dart
+//
+// ══════════════════════════════════════════════════════════════════════════════
+// ROUTER — Updated
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Changes:
+//   + Added /face-liveness route (was missing — caused crash after doc scan)
+//   + Added /face-result route
+//   All face SDK screens are stubs pending Sprint 4 implementation
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kyc/applicant_classification/ui/applicant_type_screen.dart';
-import 'package:kyc/document_upload/ui/id_upload_screen.dart';
-import 'package:kyc/document_upload/ui/readiness_confirmation_screen.dart';
-import 'package:kyc/document_verification/cubit/document_verification_cubit.dart';
-import 'package:kyc/document_verification/model/verification_result_model.dart';
-import 'package:kyc/document_verification/ui/document_scan_screen.dart';
-import 'package:kyc/document_verification/ui/verification_result_screen.dart';
-import 'package:kyc/kyc_application/model/kyc_application_model.dart';
-import '../onboarding/ui/onboarding_screen.dart';
-import '../authentication/ui/phone_entry_screen.dart';
+
+import '../applicant_classification/ui/applicant_type_screen.dart';
 import '../authentication/ui/otp_verification_screen.dart';
-import '../home/ui/home_screen.dart';
+import '../authentication/ui/phone_entry_screen.dart';
 import '../device_intelligence/ui/vpn_blocked_screen.dart';
+import '../document_upload/ui/id_upload_screen.dart';
+import '../document_upload/ui/readiness_confirmation_screen.dart';
+import '../document_verification/cubit/document_verification_cubit.dart';
+import '../document_verification/model/verification_result_model.dart';
+import '../document_verification/ui/document_scan_screen.dart';
+import '../document_verification/ui/verification_result_screen.dart';
+import '../home/ui/home_screen.dart';
+import '../kyc_application/model/kyc_application_model.dart';
+import '../onboarding/ui/onboarding_screen.dart';
+
+// ── Face verification screens (Sprint 4 — stubs until implemented) ────────────
+// TODO Sprint 4: Replace these stubs with actual face verification screens
+import '../face_verification/ui/face_liveness_screen.dart';
+import '../face_verification/ui/face_result_screen.dart';
 
 GoRouter buildRouter({
   required bool onboardingDone,
@@ -26,6 +46,7 @@ GoRouter buildRouter({
       isSuspiciousNetwork: isSuspiciousNetwork,
     ),
     routes: [
+      // ── Security ──────────────────────────────────────────────────────────
       GoRoute(
         path: '/vpn-blocked',
         name: 'vpnBlocked',
@@ -33,6 +54,8 @@ GoRouter buildRouter({
           reason: state.extra as String? ?? 'Suspicious network detected',
         ),
       ),
+
+      // ── Onboarding & Auth ─────────────────────────────────────────────────
       GoRoute(
         path: '/onboarding',
         name: 'onboarding',
@@ -51,11 +74,15 @@ GoRouter buildRouter({
           return OtpVerificationScreen(verificationId: verificationId);
         },
       ),
+
+      // ── Home ──────────────────────────────────────────────────────────────
       GoRoute(
         path: '/home',
         name: 'home',
         builder: (context, state) => const HomeScreen(),
       ),
+
+      // ── KYC Flow ──────────────────────────────────────────────────────────
       GoRoute(
         path: '/applicant-type',
         name: 'applicantType',
@@ -91,6 +118,34 @@ GoRouter buildRouter({
         builder: (context, state) {
           final result = state.extra as VerificationResultModel;
           return VerificationResultScreen(result: result);
+        },
+      ),
+
+      // ── Face Verification (Sprint 4) ───────────────────────────────────────
+      // FIXED: These routes were missing — caused crash after document scan.
+      GoRoute(
+        path: '/face-liveness',
+        name: 'faceLiveness',
+        builder: (context, state) {
+          // portraitBytes passed from verification result for face matching
+          final extra = state.extra as Map<String, dynamic>?;
+          return FaceLivenessScreen(
+            documentPortraitBytes: extra?['portraitBytes'],
+            applicationId: extra?['applicationId'] as String? ?? '',
+            userId: extra?['userId'] as String? ?? '',
+          );
+        },
+      ),
+      GoRoute(
+        path: '/face-result',
+        name: 'faceResult',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return FaceResultScreen(
+            matchScore: extra['matchScore'] as double,
+            livenessStatus: extra['livenessStatus'] as String,
+            applicationId: extra['applicationId'] as String,
+          );
         },
       ),
     ],
