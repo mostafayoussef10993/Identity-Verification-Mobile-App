@@ -1,10 +1,28 @@
+// lib/document_verification/ui/verification_result_screen.dart
+//
+// ══════════════════════════════════════════════════════════════════════════════
+// VERIFICATION RESULT SCREEN — Updated for Arabic/Egyptian ID fields
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// Changes:
+//   + Displays Arabic name section when hasArabicName == true
+//   + Displays Egypt back-side fields (profession, religion, marital status)
+//   + Continue button passes portraitBytes + applicationId to face liveness
+//   + RTL text direction applied to Arabic content
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/kyc_app_bar.dart';
 import '../../core/widgets/segmented_progress_bar.dart';
+import '../../kyc_application/cubit/kyc_application_cubit.dart';
+import '../../kyc_application/cubit/kyc_application_state.dart';
 import '../model/verification_result_model.dart';
 
 class VerificationResultScreen extends StatelessWidget {
@@ -20,19 +38,16 @@ class VerificationResultScreen extends StatelessWidget {
         child: Column(
           children: [
             const SegmentedProgressBar(current: 4, total: 4),
-
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Status badge
                     _StatusBadge(status: result.overallStatus),
-
                     const SizedBox(height: 24),
 
-                    // Document type
+                    // ── Document type ──────────────────────────────────────
                     if (result.documentTypeName != null)
                       _InfoSection(
                         title: 'Document',
@@ -45,15 +60,45 @@ class VerificationResultScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    // Identity fields
+                    // ── Arabic identity (Egyptian ID only) ─────────────────
+                    if (result.hasArabicName)
+                      _InfoSection(
+                        title: 'الهوية (Arabic)',
+                        titleIsArabic: true,
+                        children: [
+                          if (result.fullNameArabic != null)
+                            _InfoRow(
+                              'الاسم الكامل',
+                              result.fullNameArabic!,
+                              isRtl: true,
+                            ),
+                          if (result.addressArabic != null)
+                            _InfoRow(
+                              'العنوان',
+                              result.addressArabic!,
+                              isRtl: true,
+                            ),
+                          if (result.mothersName != null)
+                            _InfoRow(
+                              'اسم الأم',
+                              result.mothersName!,
+                              isRtl: true,
+                            ),
+                        ],
+                      ),
+
+                    if (result.hasArabicName) const SizedBox(height: 16),
+
+                    // ── Latin identity ─────────────────────────────────────
                     _InfoSection(
                       title: 'Identity',
                       children: [
-                        if (result.fullName != null)
-                          _InfoRow('Full name', result.fullName!),
+                        if (result.fullNameLatin != null)
+                          _InfoRow('Full name (Latin)', result.fullNameLatin!),
                         if (result.dateOfBirth != null)
                           _InfoRow('Date of birth', result.dateOfBirth!),
-                        if (result.sex != null) _InfoRow('Sex', result.sex!),
+                        if (result.sex != null)
+                          _InfoRow('Sex', result.sex!),
                         if (result.nationality != null)
                           _InfoRow('Nationality', result.nationality!),
                       ],
@@ -61,25 +106,38 @@ class VerificationResultScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    // Document details
+                    // ── Document details ───────────────────────────────────
                     _InfoSection(
                       title: 'Document details',
                       children: [
                         if (result.documentNumber != null)
                           _InfoRow('Document number', result.documentNumber!),
                         if (result.personalNumber != null)
-                          _InfoRow('Personal number', result.personalNumber!),
+                          _InfoRow('National ID number', result.personalNumber!),
                         if (result.dateOfExpiry != null)
                           _InfoRow('Expiry date', result.dateOfExpiry!),
                         if (result.dateOfIssue != null)
                           _InfoRow('Issue date', result.dateOfIssue!),
                         if (result.issuingAuthority != null)
-                          _InfoRow(
-                            'Issuing authority',
-                            result.issuingAuthority!,
-                          ),
+                          _InfoRow('Issuing authority', result.issuingAuthority!),
                       ],
                     ),
+
+                    // ── Egypt back-side data ───────────────────────────────
+                    if (result.hasEgyptBackSideData) ...[
+                      const SizedBox(height: 16),
+                      _InfoSection(
+                        title: 'Additional details',
+                        children: [
+                          if (result.profession != null)
+                            _InfoRow('Profession', result.profession!),
+                          if (result.maritalStatus != null)
+                            _InfoRow('Marital status', result.maritalStatus!),
+                          if (result.religion != null)
+                            _InfoRow('Religion', result.religion!),
+                        ],
+                      ),
+                    ],
 
                     if (result.address != null) ...[
                       const SizedBox(height: 16),
@@ -91,7 +149,7 @@ class VerificationResultScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    // Validation checks
+                    // ── Validation checks ──────────────────────────────────
                     _InfoSection(
                       title: 'Validation checks',
                       children: [
@@ -108,20 +166,37 @@ class VerificationResultScreen extends StatelessWidget {
               ),
             ),
 
-            // Continue button
+            // ── Continue to face verification ──────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
               child: Column(
                 children: [
-                  ElevatedButton(
-                    onPressed: () => context.goNamed('faceLiveness'),
-                    child: const Text(
-                      'Continue to face scan',
-                      style: AppTextStyles.buttonText,
-                    ),
+                  BlocBuilder<KycApplicationCubit, KycApplicationState>(
+                    builder: (context, state) {
+                      final applicationId = state is KycApplicationActive
+                          ? state.application.applicationId
+                          : '';
+                      final userId = state is KycApplicationActive
+                          ? state.application.userId
+                          : '';
+
+                      return ElevatedButton(
+                        onPressed: () => context.goNamed(
+                          'faceLiveness',
+                          extra: {
+                            'portraitBytes': result.portraitBytes,
+                            'applicationId': applicationId,
+                            'userId': userId,
+                          },
+                        ),
+                        child: const Text(
+                          'Continue to face scan',
+                          style: AppTextStyles.buttonText,
+                        ),
+                      );
+                    },
                   ),
-                  if (result.overallStatus ==
-                      VerificationStatus.suspicious) ...[
+                  if (result.overallStatus == VerificationStatus.suspicious) ...[
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: () => context.pop(),
@@ -138,39 +213,35 @@ class VerificationResultScreen extends StatelessWidget {
   }
 }
 
-// ── Status badge ──────────────────────────────────────────────
+// ── Status badge ──────────────────────────────────────────────────────────────
 class _StatusBadge extends StatelessWidget {
   final VerificationStatus status;
   const _StatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
-    Color color;
-    IconData icon;
-    String label;
-
-    switch (status) {
-      case VerificationStatus.genuine:
-        color = AppColors.success;
-        icon = Icons.check_circle_rounded;
-        label = 'Document verified';
-        break;
-      case VerificationStatus.suspicious:
-        color = AppColors.warning;
-        icon = Icons.warning_amber_rounded;
-        label = 'Needs manual review';
-        break;
-      case VerificationStatus.needsReview:
-        color = AppColors.info;
-        icon = Icons.info_outline_rounded;
-        label = 'Partially verified';
-        break;
-      case VerificationStatus.failed:
-        color = AppColors.error;
-        icon = Icons.cancel_rounded;
-        label = 'Verification failed';
-        break;
-    }
+    final (color, icon, label) = switch (status) {
+      VerificationStatus.genuine => (
+          AppColors.success,
+          Icons.check_circle_rounded,
+          'Document verified',
+        ),
+      VerificationStatus.suspicious => (
+          AppColors.warning,
+          Icons.warning_amber_rounded,
+          'Needs manual review',
+        ),
+      VerificationStatus.needsReview => (
+          AppColors.info,
+          Icons.info_outline_rounded,
+          'Partially verified',
+        ),
+      VerificationStatus.failed => (
+          AppColors.error,
+          Icons.cancel_rounded,
+          'Verification failed',
+        ),
+    };
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -202,11 +273,19 @@ class _StatusBadge extends StatelessWidget {
 class _InfoSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
-  const _InfoSection({required this.title, required this.children});
+  final bool titleIsArabic;
+
+  const _InfoSection({
+    required this.title,
+    required this.children,
+    this.titleIsArabic = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (children.isEmpty) return const SizedBox.shrink();
+    final nonEmpty = children.isNotEmpty;
+    if (!nonEmpty) return const SizedBox.shrink();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -216,7 +295,11 @@ class _InfoSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppTextStyles.label),
+          Text(
+            title,
+            style: AppTextStyles.label,
+            textDirection: titleIsArabic ? TextDirection.rtl : null,
+          ),
           const SizedBox(height: 10),
           ...children,
         ],
@@ -228,7 +311,8 @@ class _InfoSection extends StatelessWidget {
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
-  const _InfoRow(this.label, this.value);
+  final bool isRtl;
+  const _InfoRow(this.label, this.value, {this.isRtl = false});
 
   @override
   Widget build(BuildContext context) {
@@ -238,7 +322,7 @@ class _InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 130,
+            width: 140,
             child: Text(label, style: AppTextStyles.bodySmall),
           ),
           Expanded(
@@ -249,6 +333,8 @@ class _InfoRow extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 color: AppColors.textPrimary,
               ),
+              textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+              textAlign: isRtl ? TextAlign.right : TextAlign.left,
             ),
           ),
         ],
