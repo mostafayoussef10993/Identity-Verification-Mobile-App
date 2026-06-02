@@ -1,21 +1,46 @@
-import 'package:flutter/material.dart';
+// lib/main.dart
+//
+// ══════════════════════════════════════════════════════════════════════════════
+// MAIN — Fixed stream leak
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// FIXED: Auth stream listener was inside build() — created multiple subscriptions
+// on every rebuild. Moved to StatefulWidget with proper dispose() cleanup.
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kyc/kyc_application/cubit/kyc_application_cubit.dart';
+
+import 'app/router.dart';
 import 'authentication/cubit/auth_cubit.dart';
 import 'authentication/repository/auth_repository.dart';
-import 'device_intelligence/repository/device_intelligence_repository.dart';
-import 'onboarding/cubit/onboarding_cubit.dart';
-import 'app/router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/logger.dart';
+import 'device_intelligence/repository/device_intelligence_repository.dart';
+import 'firebase_options.dart';
+import 'kyc_application/cubit/kyc_application_cubit.dart';
+import 'onboarding/cubit/onboarding_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
 
-  // Run all startup checks in parallel for speed
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    // Firebase app already initialized (common during hot reload in development)
+    if (!e.toString().contains('already exists')) {
+      rethrow;
+    }
+  }
+
+  // Run startup checks in parallel for speed
   final results = await Future.wait([
     DeviceIntelligenceRepository().runCheck(),
     OnboardingCubit.isOnboardingDone(),
@@ -27,8 +52,8 @@ void main() async {
   final isAuthenticated = authRepo.currentFirebaseUser != null;
 
   AppLogger.info(
-    'App start — onboarding: $onboardingDone, '
-    'authenticated: $isAuthenticated, '
+    'App start — onboarding: $onboardingDone | '
+    'authenticated: $isAuthenticated | '
     'suspicious: ${networkCheck.isSuspicious}',
   );
 
@@ -42,7 +67,11 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+// ══════════════════════════════════════════════════════════════════════════════
+// MyApp — StatefulWidget to manage auth stream subscription lifecycle
+// FIXED: Was StatelessWidget — stream listener inside build() leaked subscriptions
+// ══════════════════════════════════════════════════════════════════════════════
+class MyApp extends StatefulWidget {
   final bool onboardingDone;
   final bool isAuthenticated;
   final bool isSuspiciousNetwork;
@@ -57,46 +86,58 @@ class MyApp extends StatelessWidget {
   });
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final GoRouter _router;
+  late final AuthCubit _authCubit;
+  StreamSubscription<AuthState>? _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _authCubit = AuthCubit(repository: widget.authRepository);
+
+    _router = buildRouter(
+      onboardingDone: widget.onboardingDone,
+      isAuthenticated: widget.isAuthenticated,
+      isSuspiciousNetwork: widget.isSuspiciousNetwork,
+    );
+
+    // FIXED: Single subscription, properly cancelled in dispose()
+    _authSubscription = _authCubit.stream.listen((state) {
+      if (state is AuthUnauthenticated) {
+        _router.goNamed('auth');
+      } else if (state is AuthAuthenticated) {
+        _router.goNamed('home');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // FIXED: Cancel subscription to prevent memory leak
+    _authSubscription?.cancel();
+    _authCubit.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        // AuthCubit provided at root so ALL screens can access it
-        BlocProvider<AuthCubit>(
-          create: (_) => AuthCubit(repository: authRepository),
-        ),
-        // OnboardingCubit provided at root for onboarding screen
+        BlocProvider<AuthCubit>.value(value: _authCubit),
         BlocProvider<OnboardingCubit>(create: (_) => OnboardingCubit()),
-        BlocProvider<KycApplicationCubit>(
-          // ← ADD THIS
-          create: (_) => KycApplicationCubit(),
-        ),
+        BlocProvider<KycApplicationCubit>(create: (_) => KycApplicationCubit()),
       ],
-      child: Builder(
-        builder: (context) {
-          // Listen to auth state changes to handle sign-out navigation
-          context.read<AuthCubit>().stream.listen((state) {
-            if (state is AuthUnauthenticated) {
-              appRouter.goNamed('auth');
-            }
-            if (state is AuthAuthenticated) {
-              appRouter.goNamed('home');
-            }
-          });
-
-          return MaterialApp.router(
-            title: 'KYC App',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            routerConfig: appRouter,
-          );
-        },
+      child: MaterialApp.router(
+        title: 'KYC App',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        routerConfig: _router,
       ),
     );
   }
-
-  GoRouter get appRouter => buildRouter(
-    onboardingDone: onboardingDone,
-    isAuthenticated: isAuthenticated,
-    isSuspiciousNetwork: isSuspiciousNetwork,
-  );
 }

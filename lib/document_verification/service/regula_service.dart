@@ -15,9 +15,12 @@
 //
 // ══════════════════════════════════════════════════════════════════════════════
 
+// ignore_for_file: unused_field, unnecessary_import, unrelated_type_equality_checks
+
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_document_reader_api/flutter_document_reader_api.dart';
 
@@ -121,7 +124,7 @@ class RegulaService {
 
       // Pass the database bytes — this tells the SDK to use our bundled
       // db.dat instead of downloading from Regula servers.
-      initConfig.database = dbBytes;
+      initConfig.customDb = ByteData.sublistView(dbBytes);
 
       // Deferred neural network loading — faster startup, loads on first scan.
       initConfig.delayedNNLoad = true;
@@ -236,9 +239,9 @@ class RegulaService {
   ScannerConfig _buildScannerConfig({required bool isPassport}) {
     final config = ScannerConfig.withScenario(Scenario.FULL_PROCESS);
 
-    // Apply document-type-specific parameters via functionality config
-    final functionality = DocReaderFunctionality();
-    final processing = DocReaderProcessParams();
+    // Apply document-type-specific parameters via global SDK configuration.
+    final functionality = Functionality();
+    final processing = ProcessParams();
 
     if (isPassport) {
       // ── PASSPORT: Single page, stop immediately after MRZ capture ────────
@@ -255,16 +258,15 @@ class RegulaService {
 
       // Force the SDK to require exactly 2 pages before completion
       // This prevents the scanner from accepting front-only as complete
-      processing.manualMultipageMode = false; // SDK auto-detects page turn
+      functionality.manualMultipageMode = false; // SDK auto-detects page turn
 
       AppLogger.info(
         'Scanner config: EGYPTIAN ID — double page, Arabic BiDi enabled',
       );
     }
 
-    // Apply configs to scanner
-    config.functionality = functionality;
-    config.processParams = processing;
+    _reader.functionality = functionality;
+    _reader.processParams = processing;
 
     return config;
   }

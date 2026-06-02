@@ -36,7 +36,7 @@ dependencies:
   flutter_document_reader_core_fullrfid: ^9.0.0
 
   # ── Regula Face SDK (Sprint 4) ───────────────────────────────────────────
-  flutter_face_api: ^7.4.0
+  flutter_face_api: ^8.2.1092
 
   # ── State management ─────────────────────────────────────────────────────
   flutter_bloc: ^9.1.1
@@ -75,5 +75,5 @@ flutter:
 
   assets:
     - assets/regula.license
-    - assets/regula/
+    - assets/regula/db.dat
     - assets/
