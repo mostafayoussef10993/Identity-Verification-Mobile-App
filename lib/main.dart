@@ -99,6 +99,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
 
     _authCubit = AuthCubit(repository: widget.authRepository);
+    _authCubit.checkAuthState();
 
     _router = buildRouter(
       onboardingDone: widget.onboardingDone,

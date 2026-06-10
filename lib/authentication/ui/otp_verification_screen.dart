@@ -109,51 +109,57 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: List.generate(_codeLength, (i) {
                                 final hasDigit = i < _code.length;
                                 final isActive =
                                     i == _code.length; // current box
 
-                                return AnimatedContainer(
-                                  duration: const Duration(milliseconds: 150),
-                                  width: 46,
-                                  height: 56,
-                                  decoration: BoxDecoration(
-                                    color: hasDigit
-                                        ? AppColors.primary.withOpacity(0.05)
-                                        : AppColors.surfaceGrey,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: isActive
-                                          ? AppColors
-                                                .primary // active = dark green border
-                                          : hasDigit
-                                          ? AppColors
-                                                .primary // filled = dark green border
-                                          : AppColors
-                                                .divider, // empty = grey border
-                                      width: isActive || hasDigit ? 2 : 1.5,
+                                return Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 3,
+                                    ),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 150,
+                                      ),
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        color: hasDigit
+                                            ? AppColors.primary.withOpacity(
+                                                0.05,
+                                              )
+                                            : AppColors.surfaceGrey,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: isActive
+                                              ? AppColors.primary
+                                              : hasDigit
+                                              ? AppColors.primary
+                                              : AppColors.divider,
+                                          width: isActive || hasDigit ? 2 : 1.5,
+                                        ),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: hasDigit
+                                          ? Text(
+                                              _code[i], // visible digit
+                                              style: const TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.textPrimary,
+                                              ),
+                                            )
+                                          : isActive
+                                          ? Container(
+                                              // blinking cursor bar
+                                              width: 1.5,
+                                              height: 24,
+                                              color: AppColors.primary,
+                                            )
+                                          : null,
                                     ),
                                   ),
-                                  alignment: Alignment.center,
-                                  child: hasDigit
-                                      ? Text(
-                                          _code[i], // visible digit
-                                          style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.textPrimary,
-                                          ),
-                                        )
-                                      : isActive
-                                      ? Container(
-                                          // blinking cursor bar
-                                          width: 1.5,
-                                          height: 24,
-                                          color: AppColors.primary,
-                                        )
-                                      : null,
                                 );
                               }),
                             ),

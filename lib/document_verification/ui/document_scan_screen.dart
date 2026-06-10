@@ -55,7 +55,13 @@ class _DocumentScanScreenState extends State<DocumentScanScreen> {
 
           if (state is DocumentVerificationCancelled) {
             // User backed out of scanner — go back to readiness screen
-            context.pop();
+            // FIX: Check if there's anything to pop before popping
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              // If nothing to pop, navigate to home as fallback
+              context.goNamed('home');
+            }
           }
         },
         builder: (context, state) {

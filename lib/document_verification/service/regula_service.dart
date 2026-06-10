@@ -312,6 +312,10 @@ class RegulaService {
       String? mrzLine2;
 
       if (results.textResult != null) {
+        AppLogger.info(
+          'Starting Arabic name extraction — checking ${results.textResult!.fields.length} fields',
+        );
+
         for (final field in results.textResult!.fields) {
           final fieldTypeInt = field.fieldType;
           final fieldName = field.fieldName.toLowerCase();
@@ -327,13 +331,13 @@ class RegulaService {
             // Arabic surname (1290) — "اشرف يوسف عبدالحميد يوسف"
             if (fieldTypeInt == _EgyptFieldType.surnameLocal && hasArabic) {
               surnameArabic ??= v;
-              AppLogger.info('surnameArabic via integer (1290): $v');
+              AppLogger.info('✓ surnameArabic via integer (1290): $v');
             }
 
             // Arabic given names (1291) — "مصطفى"
             if (fieldTypeInt == _EgyptFieldType.givenNamesLocal && hasArabic) {
               givenNamesArabic ??= v;
-              AppLogger.info('givenNamesArabic via integer (1291): $v');
+              AppLogger.info('✓ givenNamesArabic via integer (1291): $v');
             }
 
             // Arabic full name (1268) — only use if components not found
@@ -351,7 +355,9 @@ class RegulaService {
                 hasArabic &&
                 fieldName.contains('surname')) {
               surnameArabic = v;
-              AppLogger.info('surnameArabic via fieldName ("$fieldName"): $v');
+              AppLogger.info(
+                '✓ surnameArabic via fieldName ("$fieldName"): $v',
+              );
             }
 
             // Arabic given names fallback — "given" field with Arabic value
@@ -361,7 +367,7 @@ class RegulaService {
                     fieldName.contains('first name'))) {
               givenNamesArabic = v;
               AppLogger.info(
-                'givenNamesArabic via fieldName ("$fieldName"): $v',
+                '✓ givenNamesArabic via fieldName ("$fieldName"): $v',
               );
             }
 
@@ -405,6 +411,11 @@ class RegulaService {
         // If we still don't have both components, check field type 1268
         // which may contain the full combined Arabic name.
         if (surnameArabic == null && givenNamesArabic == null) {
+          AppLogger.info(
+            'Arabic name not found in layers 1-2 (1290, 1291, fieldName). '
+            'Checking layer 3 (1268 fallback)...',
+          );
+
           for (final field in results.textResult!.fields) {
             if (field.fieldType == _EgyptFieldType.nameLocal) {
               for (final value in field.values) {
@@ -412,12 +423,19 @@ class RegulaService {
                 if (v != null && _containsArabic(v)) {
                   // Full name in one field — store in surname for composition
                   surnameArabic = v;
-                  AppLogger.info('Full Arabic name via 1268 fallback: $v');
+                  AppLogger.info('✓ Full Arabic name via 1268 fallback: $v');
                   break;
                 }
               }
             }
             if (surnameArabic != null) break;
+          }
+
+          if (surnameArabic == null) {
+            AppLogger.warning(
+              '✗ Arabic name not found in any extraction layer. '
+              'Fields checked: type 1290, 1291, 1268 and fieldName matching.',
+            );
           }
         }
       }
@@ -459,8 +477,14 @@ class RegulaService {
 
       if (isEgyptian && fullNameArabic == null) {
         AppLogger.warning(
-          'Arabic name not composed. Check FIELD DUMP above for '
-          'surname/given name fields containing Arabic text.',
+          'Arabic name not extracted from document. Possible causes:\n'
+          '  1. Document quality too low (blurry, poor lighting)\n'
+          '  2. Name section not captured in scan\n'
+          '  3. Document orientation incorrect\n'
+          '  4. Arabic text not readable by OCR\n'
+          '\n'
+          'Falling back to Latin name: $fullNameLatin\n'
+          'Verify document is in focus and name is clearly visible.',
         );
       }
 
@@ -558,20 +582,36 @@ class RegulaService {
   // ─────────────────────────────────────────────────────────────────────────
   void _debugDumpAllFields(List<TextField> fields) {
     AppLogger.info('═══ FIELD DUMP (${fields.length} fields) ═══');
+    int arabicCount = 0;
+    int latinCount = 0;
+
     for (final field in fields) {
       for (final value in field.values) {
         final v = value.value;
         if (v == null || v.trim().isEmpty) continue;
+
+        final isArabic = _containsArabic(v);
+        if (isArabic)
+          arabicCount++;
+        else
+          latinCount++;
+
         AppLogger.info(
           'FIELD | '
           'type: ${field.fieldType} | '
           'name: "${field.fieldName}" | '
-          'arabic: ${_containsArabic(v)} | '
+          'arabic: $isArabic | '
           'value: "$v"',
         );
       }
     }
-    AppLogger.info('═══ END FIELD DUMP ═══');
+
+    AppLogger.info(
+      '═══ END FIELD DUMP ═══\n'
+      'Summary: ${fields.length} fields | '
+      '$arabicCount Arabic | '
+      '$latinCount Latin',
+    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────

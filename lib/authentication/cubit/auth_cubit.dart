@@ -10,7 +10,9 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit({AuthRepository? repository})
     : _authRepository = repository ?? AuthRepository(),
-      super(AuthInitial());
+      super(AuthInitial()) {
+    checkAuthState();
+  }
 
   // ─── Check session on app start ──────────────────────────────
   void checkAuthState() {

@@ -35,7 +35,15 @@ class KycAppBar extends StatelessWidget implements PreferredSizeWidget {
                 size: 18,
                 color: AppColors.textPrimary,
               ),
-              onPressed: () => context.pop(),
+              onPressed: () {
+                // FIX: Check if there's anything to pop before popping
+                // If not, navigate to home (prevents "There is nothing to pop" error)
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.goNamed('home');
+                }
+              },
             )
           : null,
       title: Text(title, style: AppTextStyles.appBarTitle),
@@ -52,8 +60,10 @@ class KycAppBar extends StatelessWidget implements PreferredSizeWidget {
                 () {
                   if (closeRoute != null) {
                     context.goNamed(closeRoute!);
-                  } else {
+                  } else if (context.canPop()) {
                     context.pop();
+                  } else {
+                    context.goNamed('home');
                   }
                 },
           ),
