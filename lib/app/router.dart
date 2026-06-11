@@ -29,7 +29,8 @@ import '../kyc_application/model/kyc_application_model.dart';
 import '../onboarding/ui/onboarding_screen.dart';
 
 // ── Face verification screens (Sprint 4 — stubs until implemented) ────────────
-// TODO Sprint 4: Replace these stubs with actual face verification screens
+// Sprint 4 — Face verification screens and flow wiring
+import '../face_verification/cubit/face_verification_cubit.dart';
 import '../face_verification/ui/face_liveness_screen.dart';
 import '../face_verification/ui/face_result_screen.dart';
 
@@ -126,12 +127,14 @@ GoRouter buildRouter({
         path: '/face-liveness',
         name: 'faceLiveness',
         builder: (context, state) {
-          // portraitBytes passed from verification result for face matching
           final extra = state.extra as Map<String, dynamic>?;
-          return FaceLivenessScreen(
-            documentPortraitBytes: extra?['portraitBytes'],
-            applicationId: extra?['applicationId'] as String? ?? '',
-            userId: extra?['userId'] as String? ?? '',
+          return BlocProvider(
+            create: (_) => FaceVerificationCubit(),
+            child: FaceLivenessScreen(
+              documentPortraitBytes: extra?['portraitBytes'],
+              applicationId: extra?['applicationId'] as String? ?? '',
+              userId: extra?['userId'] as String? ?? '',
+            ),
           );
         },
       ),

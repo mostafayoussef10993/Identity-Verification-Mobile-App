@@ -1,7 +1,7 @@
 // lib/face_verification/ui/face_result_screen.dart
 //
-// Sprint 4 Stub — Replace with full Regula Face SDK result screen.
-// Place at: lib/face_verification/ui/face_result_screen.dart
+// Sprint 4 — Face verification result UI.
+// Displays the Regula face matching score and liveness status.
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -22,22 +22,32 @@ class FaceResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const passThreshold = 75.0;
+    final passed = matchScore >= passThreshold && livenessStatus == 'PASSED';
+    final badgeColor = passed ? AppColors.success : AppColors.warning;
+    final badgeIcon = passed
+        ? Icons.check_circle_rounded
+        : Icons.warning_amber_rounded;
+    final statusText = passed
+        ? 'Face verification passed'
+        : 'Face verification needs review';
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const KycAppBar(title: 'Verification complete', showClose: false),
+      appBar: const KycAppBar(title: 'Verification result', showClose: false),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.check_circle_rounded,
-                size: 80,
-                color: AppColors.success,
-              ),
+              Icon(badgeIcon, size: 80, color: badgeColor),
               const SizedBox(height: 24),
-              Text('Face Result (Stub)', style: AppTextStyles.heading1),
+              Text(
+                statusText,
+                style: AppTextStyles.heading1,
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 12),
               Text(
                 'Match score: ${matchScore.toStringAsFixed(1)}%\n'

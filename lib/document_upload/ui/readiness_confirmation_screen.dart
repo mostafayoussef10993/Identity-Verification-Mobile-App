@@ -23,115 +23,116 @@ class ReadinessConfirmationScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: const KycAppBar(title: 'Confirm your identity', showClose: false),
       body: SafeArea(
-        child: Column(
-          children: [
-            const SegmentedProgressBar(current: 3, total: 4),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 48, 24, 0),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: const BoxDecoration(
-                        color: AppColors.backgroundMint,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.cloud_done_rounded,
-                        size: 56,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    Text(
-                      "Great, we got\nyour document!",
-                      style: AppTextStyles.heading1,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      "We'll now verify your document and check its authenticity.",
-                      style: AppTextStyles.body,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceGrey,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Column(
-                        children: [
-                          _NextStep(
-                            icon: Icons.document_scanner_rounded,
-                            title: 'Document verification',
-                            description:
-                                'We check your ID is genuine and extract your details.',
-                          ),
-                          Divider(height: 20, color: AppColors.divider),
-                          _NextStep(
-                            icon: Icons.face_rounded,
-                            title: 'Face verification',
-                            description:
-                                'We take a quick selfie to match against your ID photo.',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-              child: BlocBuilder<KycApplicationCubit, KycApplicationState>(
-                builder: (context, state) {
-                  // ── FIXED: Null guard — show error if application not active ──
-                  final KycApplicationModel? application =
-                      state is KycApplicationActive ? state.application : null;
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final media = MediaQuery.of(context);
+            final bottomPadding = 24 + media.viewPadding.bottom;
+            final contentSpacing = media.size.height < 650 ? 20.0 : 32.0;
 
-                  if (application == null) {
-                    return Column(
+            return SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(24, 32, 24, bottomPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SegmentedProgressBar(current: 3, total: 4),
+                  SizedBox(height: contentSpacing),
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: const BoxDecoration(
+                      color: AppColors.backgroundMint,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.cloud_done_rounded,
+                      size: 56,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  SizedBox(height: contentSpacing),
+                  Text(
+                    "Great, we got\nyour document!",
+                    style: AppTextStyles.heading1,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "We'll now verify your document and check its authenticity.",
+                    style: AppTextStyles.body,
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: contentSpacing),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceGrey,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Column(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            // ignore: deprecated_member_use
-                            color: AppColors.error.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            'Session expired. Please go back and start again.',
-                            style: TextStyle(color: AppColors.error),
-                            textAlign: TextAlign.center,
-                          ),
+                        _NextStep(
+                          icon: Icons.document_scanner_rounded,
+                          title: 'Document verification',
+                          description:
+                              'We check your ID is genuine and extract your details.',
                         ),
-                        const SizedBox(height: 16),
-                        OutlinedButton(
-                          onPressed: () => context.goNamed('applicantType'),
-                          child: const Text('Go back'),
+                        Divider(height: 20, color: AppColors.divider),
+                        _NextStep(
+                          icon: Icons.face_rounded,
+                          title: 'Face verification',
+                          description:
+                              'We take a quick selfie to match against your ID photo.',
                         ),
                       ],
-                    );
-                  }
+                    ),
+                  ),
+                  SizedBox(height: contentSpacing),
+                  BlocBuilder<KycApplicationCubit, KycApplicationState>(
+                    builder: (context, state) {
+                      final KycApplicationModel? application =
+                          state is KycApplicationActive
+                          ? state.application
+                          : null;
 
-                  return ElevatedButton(
-                    onPressed: () => context.goNamed(
-                      'documentScan',
-                      extra: application, // ← Safe: never null here
-                    ),
-                    child: const Text(
-                      'Start verification',
-                      style: AppTextStyles.buttonText,
-                    ),
-                  );
-                },
+                      if (application == null) {
+                        return Column(
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withAlpha(26),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'Session expired. Please go back and start again.',
+                                style: TextStyle(color: AppColors.error),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            OutlinedButton(
+                              onPressed: () => context.goNamed('applicantType'),
+                              child: const Text('Go back'),
+                            ),
+                          ],
+                        );
+                      }
+
+                      return ElevatedButton(
+                        onPressed: () =>
+                            context.goNamed('documentScan', extra: application),
+                        child: const Text(
+                          'Start verification',
+                          style: AppTextStyles.buttonText,
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
