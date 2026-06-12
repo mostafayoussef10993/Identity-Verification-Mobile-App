@@ -1,8 +1,17 @@
 // lib/face_verification/cubit/face_verification_cubit.dart
 //
-// Sprint 4 — Face verification cubit.
-// Manages Regula Face SDK initialization, liveness flow, face matching,
-// and persistence of face verification results.
+// ══════════════════════════════════════════════════════════════════════════════
+// FACE VERIFICATION CUBIT — Fixed
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// FIX: startLiveness() call updated — no longer passes LivenessConfig
+// with unverified parameters. Config is now built inside RegulaFaceService
+// with only confirmed-safe properties for flutter_face_api ^8.2.1092.
+//
+// FIX: SDK initialization now also triggered on screen load via initializeSdk()
+// which is called from FaceLivenessScreen.initState — not only on button tap.
+//
+// ══════════════════════════════════════════════════════════════════════════════
 
 import 'dart:typed_data';
 
@@ -26,6 +35,9 @@ class FaceVerificationCubit extends Cubit<FaceVerificationState> {
        _repository = repository ?? FaceVerificationRepository(),
        super(const FaceVerificationInitial());
 
+  // ── Initialize SDK on screen load ─────────────────────────────────────────
+  // Called from FaceLivenessScreen initState so the SDK warms up before
+  // the user taps the button — avoids loading delay on tap.
   Future<void> initializeSdk() async {
     if (_faceService.isInitialized) {
       emit(const FaceVerificationReady());
@@ -35,32 +47,51 @@ class FaceVerificationCubit extends Cubit<FaceVerificationState> {
     emit(const FaceVerificationLoading('Initializing face engine...'));
 
     final initialized = await _faceService.initialize();
+
     if (initialized) {
       emit(const FaceVerificationReady());
     } else {
       emit(
         const FaceVerificationError(
           message:
-              'Face verification engine failed to initialize. Please restart the app.',
+              'Face verification engine failed to initialize.\n\n'
+              'Please ensure your device is supported and try again.',
           canRetry: true,
         ),
       );
     }
   }
 
+  // ── Full face verification flow ───────────────────────────────────────────
   Future<void> startFaceVerification({
     required Uint8List documentPortraitBytes,
     required String applicationId,
     required String userId,
   }) async {
+    // Guard: portrait must exist
+    if (documentPortraitBytes.isEmpty) {
+      emit(
+        const FaceVerificationError(
+          message:
+              'Document portrait is missing.\n'
+              'Please go back and rescan your document.',
+          canRetry: false,
+        ),
+      );
+      return;
+    }
+
+    // Initialize if not already done
     if (!_faceService.isInitialized) {
       emit(const FaceVerificationLoading('Loading face engine...'));
+
       final initialized = await _faceService.initialize();
       if (!initialized) {
         emit(
           const FaceVerificationError(
             message:
-                'Face verification engine failed to initialize. Please try again.',
+                'Face verification engine failed to initialize.\n'
+                'Please try again.',
             canRetry: true,
           ),
         );
@@ -68,36 +99,21 @@ class FaceVerificationCubit extends Cubit<FaceVerificationState> {
       }
     }
 
-    if (documentPortraitBytes.isEmpty) {
-      emit(
-        const FaceVerificationError(
-          message:
-              'Document portrait is missing. Cannot continue face verification.',
-          canRetry: false,
-        ),
-      );
-      return;
-    }
-
+    // ── Step 1: Passive liveness ───────────────────────────────────────────
     emit(const FaceVerificationLoading('Starting liveness check...'));
 
     try {
-      final livenessResponse = await _faceService.startLiveness(
-        config: LivenessConfig(
-          livenessType: LivenessType.PASSIVE,
-          cameraSwitchEnabled: true,
-          torchButtonEnabled: true,
-          attemptsCount: 3,
-          preventScreenRecording: true,
-          closeButtonEnabled: false,
-        ),
-      );
+      // FIX: No LivenessConfig params passed here — moved into service
+      // to avoid compile errors from unverified parameter names
+      final livenessResponse = await _faceService.startLiveness();
 
       if (livenessResponse.liveness != LivenessStatus.PASSED) {
         emit(
           const FaceVerificationError(
             message:
-                'Liveness check did not pass. Please retry and follow the on-screen instructions.',
+                'Liveness check did not pass.\n\n'
+                'Please retry in good lighting with your face '
+                'centered on the screen.',
             canRetry: true,
           ),
         );
@@ -108,16 +124,19 @@ class FaceVerificationCubit extends Cubit<FaceVerificationState> {
         emit(
           const FaceVerificationError(
             message:
-                'Could not capture a valid selfie. Please try again in good lighting.',
+                'Could not capture a valid selfie.\n'
+                'Please try again in good lighting.',
             canRetry: true,
           ),
         );
         return;
       }
 
+      // ── Step 2: Face matching ──────────────────────────────────────────
       emit(
         const FaceVerificationLoading('Matching face to document portrait...'),
       );
+
       final matchScore = await _faceService.matchFaces(
         liveImage: livenessResponse.image!,
         documentPortrait: documentPortraitBytes,
@@ -127,13 +146,15 @@ class FaceVerificationCubit extends Cubit<FaceVerificationState> {
         emit(
           const FaceVerificationError(
             message:
-                'Face matching failed. Please make sure your face is clearly visible and try again.',
+                'Face matching failed.\n'
+                'Please ensure your face is clearly visible and try again.',
             canRetry: true,
           ),
         );
         return;
       }
 
+      // ── Step 3: Build result & save ────────────────────────────────────
       final result = FaceVerificationResultModel(
         livenessPassed: livenessResponse.liveness == LivenessStatus.PASSED,
         livenessStatus: livenessResponse.liveness.name,
@@ -152,7 +173,7 @@ class FaceVerificationCubit extends Cubit<FaceVerificationState> {
       AppLogger.error('Face verification failed', e);
       emit(
         FaceVerificationError(
-          message: 'Face verification failed. ${e.toString()}',
+          message: 'Face verification failed: ${e.toString()}',
           canRetry: true,
         ),
       );
