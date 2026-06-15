@@ -41,46 +41,46 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBUD6vU6z6DqztnZnopdN5bdHo4WVuHCDI',
-    appId: '1:834985001119:web:c144fde5341bd0b04322aa',
-    messagingSenderId: '834985001119',
-    projectId: 'kycflutter-7cd11',
-    authDomain: 'kycflutter-7cd11.firebaseapp.com',
-    storageBucket: 'kycflutter-7cd11.firebasestorage.app',
+    apiKey: 'AIzaSyAVftpWnDVi7dd8ITAKX-ppY4a3SNupwC4',
+    appId: '1:621727622320:web:52a8d7183f40e4b2e18775',
+    messagingSenderId: '621727622320',
+    projectId: 'newkycapp',
+    authDomain: 'newkycapp.firebaseapp.com',
+    storageBucket: 'newkycapp.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyA_Hpd0jmjZ8wskNJywSqoVehcN9VFOvw0',
-    appId: '1:834985001119:android:7bea30f52d4165fb4322aa',
-    messagingSenderId: '834985001119',
-    projectId: 'kycflutter-7cd11',
-    storageBucket: 'kycflutter-7cd11.firebasestorage.app',
+    apiKey: 'AIzaSyAMVO-4QttLeu698AkQnQ7964Ne_PxWnkc',
+    appId: '1:621727622320:android:8d14b823cad7edc5e18775',
+    messagingSenderId: '621727622320',
+    projectId: 'newkycapp',
+    storageBucket: 'newkycapp.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCsJamqHpGM_CJspYek7OVUNynLggXWczQ',
-    appId: '1:834985001119:ios:102256ee1255846a4322aa',
-    messagingSenderId: '834985001119',
-    projectId: 'kycflutter-7cd11',
-    storageBucket: 'kycflutter-7cd11.firebasestorage.app',
+    apiKey: 'AIzaSyA97sHRvoP4cT0bJ97J2E74W4fSQJlZIMQ',
+    appId: '1:621727622320:ios:1108cb89225ece3ee18775',
+    messagingSenderId: '621727622320',
+    projectId: 'newkycapp',
+    storageBucket: 'newkycapp.firebasestorage.app',
     iosBundleId: 'com.mostafa.kyc',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCsJamqHpGM_CJspYek7OVUNynLggXWczQ',
-    appId: '1:834985001119:ios:102256ee1255846a4322aa',
-    messagingSenderId: '834985001119',
-    projectId: 'kycflutter-7cd11',
-    storageBucket: 'kycflutter-7cd11.firebasestorage.app',
+    apiKey: 'AIzaSyA97sHRvoP4cT0bJ97J2E74W4fSQJlZIMQ',
+    appId: '1:621727622320:ios:1108cb89225ece3ee18775',
+    messagingSenderId: '621727622320',
+    projectId: 'newkycapp',
+    storageBucket: 'newkycapp.firebasestorage.app',
     iosBundleId: 'com.mostafa.kyc',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBUD6vU6z6DqztnZnopdN5bdHo4WVuHCDI',
-    appId: '1:834985001119:web:8a991297766866ca4322aa',
-    messagingSenderId: '834985001119',
-    projectId: 'kycflutter-7cd11',
-    authDomain: 'kycflutter-7cd11.firebaseapp.com',
-    storageBucket: 'kycflutter-7cd11.firebasestorage.app',
+    apiKey: 'AIzaSyAVftpWnDVi7dd8ITAKX-ppY4a3SNupwC4',
+    appId: '1:621727622320:web:334333e967722899e18775',
+    messagingSenderId: '621727622320',
+    projectId: 'newkycapp',
+    authDomain: 'newkycapp.firebaseapp.com',
+    storageBucket: 'newkycapp.firebasestorage.app',
   );
 }

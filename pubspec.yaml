@@ -1,21 +1,12 @@
 # pubspec.yaml
-#
 # ══════════════════════════════════════════════════════════════════════════════
-# UPDATED pubspec.yaml
-# Changes:
-#   + All Firebase packages pinned to specific versions
-#   + flutter_face_api added (Sprint 4)
-#   + flutter_document_reader_api pinned (removed 'any')
-#   + assets/regula/ declared for offline db.dat
-#   + flutter_secure_storage added
-#   - cloudinary_sdk REMOVED (no document image uploads — local only)
-#   - flutter_dotenv REMOVED (no external upload credentials needed)
+# FIX: assets section — changed assets/regula/db.dat to assets/regula/
+# (folder declaration is required so Flutter bundles all files in the folder)
 # ══════════════════════════════════════════════════════════════════════════════
 
 name: kyc
 description: "Production KYC Application"
 publish_to: 'none'
-
 version: 1.0.0+1
 
 environment:
@@ -25,41 +16,42 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # ── Firebase (pinned versions) ───────────────────────────────────────────
+  # ── Firebase ─────────────────────────────────────────────────────────────
   firebase_core: ^3.13.1
   firebase_auth: ^5.5.2
   cloud_firestore: ^5.6.6
   firebase_storage: ^12.4.5
 
-  # ── Regula Document Reader SDK ───────────────────────────────────────────
+  # ── Regula Document Reader SDK ────────────────────────────────────────────
   flutter_document_reader_api: ^9.4.0
   flutter_document_reader_core_fullrfid: ^9.0.0
 
-  # ── Regula Face SDK (Sprint 4) ───────────────────────────────────────────
+  # ── Regula Face SDK ───────────────────────────────────────────────────────
   flutter_face_api: ^8.2.1092
+  flutter_face_core_match: ^8.2.462
 
-  # ── State management ─────────────────────────────────────────────────────
+  # ── State management ──────────────────────────────────────────────────────
   flutter_bloc: ^9.1.1
 
-  # ── Navigation ───────────────────────────────────────────────────────────
+  # ── Navigation ────────────────────────────────────────────────────────────
   go_router: ^14.6.3
 
-  # ── Networking ───────────────────────────────────────────────────────────
+  # ── Networking ────────────────────────────────────────────────────────────
   dio: ^5.8.0+1
 
-  # ── Local storage ────────────────────────────────────────────────────────
+  # ── Local storage ─────────────────────────────────────────────────────────
   shared_preferences: ^2.5.3
   flutter_secure_storage: ^9.2.4
 
-  # ── Media ────────────────────────────────────────────────────────────────
+  # ── Media ─────────────────────────────────────────────────────────────────
   image_picker: ^1.1.2
   camera: ^0.11.1
   image: ^4.3.0
 
-  # ── Device ───────────────────────────────────────────────────────────────
+  # ── Device ────────────────────────────────────────────────────────────────
   device_info_plus: ^11.3.3
 
-  # ── Utilities ────────────────────────────────────────────────────────────
+  # ── Utilities ─────────────────────────────────────────────────────────────
   uuid: ^4.5.1
 
   cupertino_icons: ^1.0.8
@@ -75,5 +67,6 @@ flutter:
 
   assets:
     - assets/regula.license
-    - assets/regula/db.dat
+    # FIX: folder declaration (not file) — bundles db.dat + any other files
+    - assets/regula/
     - assets/

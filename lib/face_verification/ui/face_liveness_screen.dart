@@ -1,8 +1,14 @@
 // lib/face_verification/ui/face_liveness_screen.dart
 //
-// Sprint 4 — Face verification UI.
-// Uses FaceVerificationCubit and Regula Face SDK to perform passive liveness
-// and face matching, then routes to the result screen.
+// ══════════════════════════════════════════════════════════════════════════════
+// FACE LIVENESS SCREEN — Fixed
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// FIX: Added StatefulWidget + initState to call initializeSdk() on screen load.
+// Old version was StatelessWidget — SDK init only happened on button tap,
+// causing a loading delay. Now warms up immediately when screen opens.
+//
+// ══════════════════════════════════════════════════════════════════════════════
 
 import 'dart:typed_data';
 
@@ -16,7 +22,7 @@ import '../../core/widgets/segmented_progress_bar.dart';
 import '../cubit/face_verification_cubit.dart';
 import '../cubit/face_verification_state.dart';
 
-class FaceLivenessScreen extends StatelessWidget {
+class FaceLivenessScreen extends StatefulWidget {
   final Uint8List? documentPortraitBytes;
   final String applicationId;
   final String userId;
@@ -29,10 +35,27 @@ class FaceLivenessScreen extends StatelessWidget {
   });
 
   @override
+  State<FaceLivenessScreen> createState() => _FaceLivenessScreenState();
+}
+
+class _FaceLivenessScreenState extends State<FaceLivenessScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // FIX: Warm up SDK on screen load — not on button tap
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<FaceVerificationCubit>().initializeSdk();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const KycAppBar(title: 'Face verification', showClose: false),
+      appBar: const KycAppBar(
+        title: 'Face verification',
+        showClose: false,
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -55,53 +78,70 @@ class FaceLivenessScreen extends StatelessWidget {
                   },
                   builder: (context, state) {
                     final hasPortrait =
-                        documentPortraitBytes != null &&
-                        documentPortraitBytes!.isNotEmpty;
-                    final errorMessage = state is FaceVerificationError
-                        ? state.message
-                        : null;
+                        widget.documentPortraitBytes != null &&
+                        widget.documentPortraitBytes!.isNotEmpty;
+
                     final isLoading = state is FaceVerificationLoading;
-                    final loadingMessage = state is FaceVerificationLoading
-                        ? state.message
-                        : null;
+                    final isError = state is FaceVerificationError;
+                    final isReady = state is FaceVerificationReady;
+
+                    final loadingMessage = isLoading ? state.message : null;
+                    final errorMessage = isError ? state.message : null;
+                    final canRetry = isError ? state.canRetry : false;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: 28),
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: const BoxDecoration(
-                            color: AppColors.backgroundMint,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.face_rounded,
-                            size: 64,
-                            color: AppColors.primary,
+
+                        // ── Icon ─────────────────────────────────────────
+                        Center(
+                          child: Container(
+                            width: 120,
+                            height: 120,
+                            decoration: const BoxDecoration(
+                              color: AppColors.backgroundMint,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.face_rounded,
+                              size: 64,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
+
                         const SizedBox(height: 28),
+
+                        // ── Title ─────────────────────────────────────────
                         Text(
                           'Face verification',
                           style: AppTextStyles.heading1,
                           textAlign: TextAlign.center,
                         ),
+
                         const SizedBox(height: 12),
+
+                        // ── Subtitle ──────────────────────────────────────
                         Text(
                           hasPortrait
-                              ? 'Follow the on-screen instructions to capture a selfie. We will compare it to your document portrait.'
-                              : 'Document portrait is missing. Face verification cannot proceed without a captured portrait.',
+                              ? 'Follow the on-screen instructions to capture '
+                                'a selfie. We will compare it to your document portrait.'
+                              : 'Document portrait is missing. '
+                                'Face verification cannot proceed without a captured portrait.',
                           style: AppTextStyles.body,
                           textAlign: TextAlign.center,
                         ),
+
                         const SizedBox(height: 20),
+
+                        // ── Error message ─────────────────────────────────
                         if (errorMessage != null) ...[
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: AppColors.error.withAlpha(26),
+                              // ignore: deprecated_member_use
+                              color: AppColors.error.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -110,15 +150,19 @@ class FaceLivenessScreen extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                         ],
+
+                        // ── Content area ──────────────────────────────────
                         Expanded(
                           child: Center(
                             child: isLoading
                                 ? Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const CircularProgressIndicator(),
+                                      const CircularProgressIndicator(
+                                        color: AppColors.primary,
+                                      ),
                                       const SizedBox(height: 16),
                                       Text(
                                         loadingMessage ?? 'Working...',
@@ -130,44 +174,68 @@ class FaceLivenessScreen extends StatelessWidget {
                                 : Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(
-                                        Icons.camera_front_rounded,
-                                        size: 64,
-                                        color: AppColors.primary,
+                                      Icon(
+                                        isReady
+                                            ? Icons.camera_front_rounded
+                                            : Icons.hourglass_empty_rounded,
+                                        size: 48,
+                                        color: isReady
+                                            ? AppColors.primary
+                                            : AppColors.textSecondary,
                                       ),
-                                      const SizedBox(height: 18),
+                                      const SizedBox(height: 16),
                                       Text(
-                                        'Ready for selfie capture',
+                                        isReady
+                                            ? 'Ready for selfie capture'
+                                            : 'Preparing...',
                                         style: AppTextStyles.label,
                                         textAlign: TextAlign.center,
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Tap continue when you are in a well-lit area and your face is centered on the screen.',
-                                        style: AppTextStyles.bodySmall,
-                                        textAlign: TextAlign.center,
-                                      ),
+                                      if (isReady) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Tap the button below when you are in '
+                                          'a well-lit area with your face centered '
+                                          'on the screen.',
+                                          style: AppTextStyles.bodySmall,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
                                     ],
                                   ),
                           ),
                         ),
+
+                        // ── Action buttons ────────────────────────────────
                         Padding(
                           padding: const EdgeInsets.only(bottom: 24),
-                          child: ElevatedButton(
-                            onPressed: hasPortrait && !isLoading
-                                ? () => context
-                                      .read<FaceVerificationCubit>()
-                                      .startFaceVerification(
-                                        documentPortraitBytes:
-                                            documentPortraitBytes!,
-                                        applicationId: applicationId,
-                                        userId: userId,
-                                      )
-                                : null,
-                            child: Text(
-                              hasPortrait ? 'Start face scan' : 'Cannot start',
-                              style: AppTextStyles.buttonText,
-                            ),
+                          child: Column(
+                            children: [
+                              ElevatedButton(
+                                onPressed: hasPortrait && isReady
+                                    ? () => context
+                                        .read<FaceVerificationCubit>()
+                                        .startFaceVerification(
+                                          documentPortraitBytes:
+                                              widget.documentPortraitBytes!,
+                                          applicationId: widget.applicationId,
+                                          userId: widget.userId,
+                                        )
+                                    : null,
+                                child: Text(
+                                  hasPortrait ? 'Start face scan' : 'Cannot start',
+                                  style: AppTextStyles.buttonText,
+                                ),
+                              ),
+                              if (canRetry) ...[
+                                const SizedBox(height: 12),
+                                OutlinedButton(
+                                  onPressed: () =>
+                                      context.read<FaceVerificationCubit>().retry(),
+                                  child: const Text('Try again'),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ],

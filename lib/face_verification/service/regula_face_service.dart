@@ -62,9 +62,7 @@ class RegulaFaceService {
         _initialized = true;
         AppLogger.success('Regula Face SDK initialized successfully');
       } else {
-        AppLogger.error(
-          'Face SDK initialization failed: ${error?.message}',
-        );
+        AppLogger.error('Face SDK initialization failed: ${error?.message}');
       }
 
       return success;
@@ -115,7 +113,16 @@ class RegulaFaceService {
     final response = await _faceSdk.matchFaces(request);
 
     if (response.error != null) {
-      AppLogger.error('Face match failed', response.error);
+      final error = response.error!;
+      final underlying = error.underlyingError;
+      final underlyingText = underlying != null
+          ? ' | underlying: ${underlying.message} (code ${underlying.code})'
+          : '';
+
+      AppLogger.error(
+        'Face match failed [${error.code.name} (${error.code.value})]: '
+        '${error.message}$underlyingText',
+      );
       return null;
     }
 
@@ -127,7 +134,9 @@ class RegulaFaceService {
     final similarity = response.results.first.similarity;
     final scorePercent = similarity * 100;
 
-    AppLogger.success('Face match similarity: ${scorePercent.toStringAsFixed(1)}%');
+    AppLogger.success(
+      'Face match similarity: ${scorePercent.toStringAsFixed(1)}%',
+    );
 
     return scorePercent;
   }

@@ -1,14 +1,22 @@
+<!-- android/app/src/main/AndroidManifest.xml -->
+<!--
+══════════════════════════════════════════════════════════════════════════════
+UPDATED — package attribute changed to match new namespace
+══════════════════════════════════════════════════════════════════════════════
+CHANGED: package="com.mostafa.kyc" → package="com.mostafa.kycapp"
+Must match the namespace/applicationId in build.gradle.kts.
+══════════════════════════════════════════════════════════════════════════════
+-->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mostafa.kyc">
+    package="com.mostafa.kycapp">
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <!-- Add for Regula database download: -->
     <uses-permission android:name="android.permission.NFC"/>
-    <!-- Camera hardware feature -->
+
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -40,13 +48,11 @@
             </intent-filter>
         </activity>
 
-        <!-- Flutter Engine -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
 
-    <!-- Required for ProcessTextPlugin -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT" />

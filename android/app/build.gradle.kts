@@ -1,40 +1,60 @@
+// android/app/build.gradle.kts
+//
+// ══════════════════════════════════════════════════════════════════════════════
+// UPDATED — New package identity for fresh Regula auto-trial license
+// ══════════════════════════════════════════════════════════════════════════════
+//
+// CHANGED:
+//   namespace      "com.mostafa.kyc"     → "com.mostafa.kycapp"
+//   applicationId  "com.mostafa.kyc"     → "com.mostafa.kycapp"
+//
+// REASON: Original applicationId's Regula auto-trial license expired and
+// cannot be re-registered (error 17: ONLINE_LICENSE_AUTO_TRIAL_NOT_UNIQUE_APP_ID_OS).
+// A new applicationId gives a fresh, unused (appId + OS) combination for
+// a new auto-trial license.
+//
+// RETAINED from previous fix:
+//   - aaptOptions noCompress("Regula/faceSdkResource.dat") — Face SDK fix
+//   - JavaVersion.VERSION_21 — Face SDK example requirement
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
 plugins {
     id("com.android.application")
-    id("com.google.gms.google-services") // Firebase
+    id("com.google.gms.google-services")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
-    namespace = "com.mostafa.kyc"
+    // CHANGED — new package identity
+    namespace = "com.mostafa.kycapp"
     compileSdk = 36
 
-    // Stable NDK version (recommended for camera, ML, KYC SDKs)
     ndkVersion = "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "21"
     }
 
     defaultConfig {
-        applicationId = "com.mostafa.kyc"
+        // CHANGED — new package identity
+        applicationId = "com.mostafa.kycapp"
         minSdk = 24
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
     }
 
     buildTypes {
         release {
-            // TODO: Replace with your release keystore later
             signingConfig = signingConfigs.getByName("debug")
-
-            // Optional: enable shrinking later for production
             isMinifyEnabled = false
             isShrinkResources = false
         }
@@ -43,21 +63,20 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    // Face SDK fix — retained from previous step
+    aaptOptions {
+        noCompress("Regula/faceSdkResource.dat")
+    }
 }
 
 dependencies {
-    // Firebase BoM (manage versions automatically)
     implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
-
-    // Firebase services (add/remove based on your needs)
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-storage")
-
-    // Optional (recommended for analytics/debugging)
     implementation("com.google.firebase:firebase-analytics")
-    // The Regula Core package is large and requires multidex
-    implementation("androidx.multidex:multidex:2.0.1") 
+    implementation("androidx.multidex:multidex:2.0.1")
 }
 
 flutter {

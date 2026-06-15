@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "40550634321",
-    "project_id": "kycregulasdk",
-    "storage_bucket": "kycregulasdk.firebasestorage.app"
+    "project_number": "621727622320",
+    "project_id": "newkycapp",
+    "storage_bucket": "newkycapp.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:40550634321:android:b39870ccdcff560603b970",
+        "mobilesdk_app_id": "1:621727622320:android:8d14b823cad7edc5e18775",
         "android_client_info": {
-          "package_name": "com.mostafa.kyc"
+          "package_name": "com.mostafa.kycapp"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBmN1X4pMnuCup9SE5jqVucCdRrAEt7T5A"
+          "current_key": "AIzaSyAMVO-4QttLeu698AkQnQ7964Ne_PxWnkc"
         }
       ],
       "services": {
