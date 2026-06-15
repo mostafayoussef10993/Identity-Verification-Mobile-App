@@ -105,12 +105,28 @@ class RegulaFaceService {
 
     AppLogger.info('Sending face match request to Regula...');
 
+    // The portrait bytes are extracted from the document reader as a cropped
+    // printed portrait image. Use PRINTED so the matcher treats it as a
+    // document photo rather than a full document scan.
     final request = MatchFacesRequest([
       MatchFacesImage(liveImage, ImageType.LIVE),
-      MatchFacesImage(documentPortrait, ImageType.DOCUMENT_WITH_LIVE),
+      MatchFacesImage(documentPortrait, ImageType.PRINTED),
     ]);
 
-    final response = await _faceSdk.matchFaces(request);
+    var response = await _faceSdk.matchFaces(request);
+
+    if (response.error != null &&
+        response.error!.code == MatchFacesErrorCode.FACE_NOT_DETECTED) {
+      AppLogger.warning(
+        'Face not detected on document portrait with ImageType.PRINTED; '
+        'retrying with ImageType.DOCUMENT_WITH_LIVE',
+      );
+      final retryRequest = MatchFacesRequest([
+        MatchFacesImage(liveImage, ImageType.LIVE),
+        MatchFacesImage(documentPortrait, ImageType.DOCUMENT_WITH_LIVE),
+      ]);
+      response = await _faceSdk.matchFaces(retryRequest);
+    }
 
     if (response.error != null) {
       final error = response.error!;
