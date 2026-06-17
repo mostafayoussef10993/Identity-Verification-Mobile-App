@@ -1,19 +1,9 @@
 // lib/app/router.dart
-//
-// ══════════════════════════════════════════════════════════════════════════════
-// ROUTER — Updated
-// ══════════════════════════════════════════════════════════════════════════════
-//
-// Changes:
-//   + Added /face-liveness route (was missing — caused crash after doc scan)
-//   + Added /face-result route
-//   All face SDK screens are stubs pending Sprint 4 implementation
-//
+// ROUTER
 // ══════════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
 import '../applicant_classification/ui/applicant_type_screen.dart';
 import '../authentication/ui/otp_verification_screen.dart';
 import '../authentication/ui/phone_entry_screen.dart';
@@ -27,9 +17,6 @@ import '../document_verification/ui/verification_result_screen.dart';
 import '../home/ui/home_screen.dart';
 import '../kyc_application/model/kyc_application_model.dart';
 import '../onboarding/ui/onboarding_screen.dart';
-
-// ── Face verification screens (Sprint 4 — stubs until implemented) ────────────
-// Sprint 4 — Face verification screens and flow wiring
 import '../face_verification/cubit/face_verification_cubit.dart';
 import '../face_verification/ui/face_liveness_screen.dart';
 import '../face_verification/ui/face_result_screen.dart';
@@ -121,8 +108,7 @@ GoRouter buildRouter({
         },
       ),
 
-      // ── Face Verification (Sprint 4) ───────────────────────────────────────
-      // FIXED: These routes were missing — caused crash after document scan.
+      // ── Face Verification  ───────────────────────────────────────
       GoRoute(
         path: '/face-liveness',
         name: 'faceLiveness',
